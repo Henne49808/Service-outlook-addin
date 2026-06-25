@@ -1,8 +1,8 @@
 // 1. ZENTRALE AUTHENTIFIZIERUNGS-KONFIGURATION (Weg A)
 const msalConfig = {
     auth: {
-        clientId: "HIER_IHRE_KOPIERTE_CLIENT_ID_EINSETZEN", 
-        authority: "https://login.microsoftonline.com/HIER_IHRE_KOPIERTE_TENANT_ID_EINSETZEN",
+        clientId: "8d7de9fa-b100-4963-9873-28f5daacf2ee", 
+        authority: "https://login.microsoftonline.com/0eb9b61a-77ec-433c-9c80-d09668b40aab",
         redirectUri: window.location.href
     },
     cache: { cacheLocation: "localStorage", storeAuthStateInCookie: true }
@@ -11,15 +11,15 @@ const msalConfig = {
 const msalInstance = new msal.PublicClientApplication(msalConfig);
 
 const D365_CONFIG = {
-    apiEndpoint: "https://org.api.crm4.dynamics.com/api/data/v9.2", // Ersetzen durch Ihre Dynamics CRM API-URL
+    apiEndpoint: "https://dev-hedelius.crm4.dynamics.com/api/data/v9.2", // Ersetzen durch Ihre Dynamics CRM API-URL
     fields: [
         { logicalName: "title", label: "Anfragetitel", type: "text" },
         { logicalName: "_customerid_value@OData.Community.Display.V1.FormattedValue", logicalNameRaw: "_customerid_value", label: "Kunde", type: "text", readOnly: true },
         { logicalName: "_primarycontactid_value@OData.Community.Display.V1.FormattedValue", logicalNameRaw: "_primarycontactid_value", label: "Ansprechpartner", type: "text", readOnly: true },
-        { logicalName: "new_maschinennummer", label: "Maschinennummer", type: "text" },
+        { logicalName: "con_maschinennummer", label: "Maschinennummer", type: "text" },
         { logicalName: "description", label: "Fehlerbeschreibung", type: "textarea" },
         { logicalName: "prioritycode@OData.Community.Display.V1.FormattedValue", logicalNameRaw: "prioritycode", label: "Schweregrad Priorität", type: "text", readOnly: true },
-        { logicalName: "new_sap_servicemeldungsnummer", label: "SAP-Servicemeldungsnummer", type: "text" },
+        { logicalName: "con_sapid", label: "SAP-Servicemeldungsnummer", type: "text" },
         { logicalName: "new_sap_besitzer", label: "SAP-Besitzer", type: "text" },
         { logicalName: "new_meldungsbezugstyp", label: "Meldungsbezugstyp", type: "text" }
     ]
