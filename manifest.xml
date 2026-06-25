@@ -14,7 +14,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://IHRE_GITHUB_PAGES_URL/taskpane.html"/>
+        <SourceLocation DefaultValue="https://henne49808.github.io/Service-outlook-addin/taskpane.html"/>
         <RequestedHeight>300</RequestedHeight>
       </DesktopSettings>
     </Form>
