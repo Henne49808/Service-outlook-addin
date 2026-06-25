@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hedelius Outlook Add-In</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js" type="text/javascript"></script>
+    <style>
+        /* Grundlegendes Styling im Fluent-UI-Stil */
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            font-size: 14px;
+            color: #323130;
+            background-color: #faf9f8;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* HEADER-BEREICH mit Logo und Titel */
+        #addin-header {
+            background-color: #ffffff;
+            padding: 16px;
+            border-bottom: 1px solid #edebe9;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        
+        #addin-header img.logo {
+            height: 48px; /* Passen Sie die Höhe nach Bedarf an */
+            width: auto;
+        }
+        
+        #addin-header h1.title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #323130;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        /* HAUPTINHALT (Scrollbar) */
+        #main-content {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        h2 { font-size: 16px; font-weight: 600; color: #0078d4; margin: 0 0 8px 0; border-bottom: 1px solid #edebe9; padding-bottom: 4px; }
+        .section { background: #ffffff; border-radius: 2px; padding: 12px; box-shadow: 0 1.6px 3.6px 0 rgba(0,0,0,0.132), 0 0.3px 0.9px 0 rgba(0,0,0,0.108); }
+        .field-group { margin-bottom: 10px; }
+        .field-label { font-size: 11px; font-weight: 600; color: #605e5c; text-transform: uppercase; }
+        .field-value { font-size: 13px; color: #323130; margin-top: 2px; word-break: break-word; }
+        input[type="text"], textarea, select { width: 100%; padding: 6px 8px; border: 1px solid #a19f9d; border-radius: 2px; box-sizing: border-box; font-family: inherit; margin-top: 4px; }
+        input:focus, textarea:focus, select:focus { border-color: #0078d4; outline: none; }
+        .btn { display: block; width: 100%; padding: 8px 16px; margin-bottom: 8px; border-radius: 2px; border: 1px solid transparent; font-weight: 600; cursor: pointer; text-align: center; font-size: 13px; }
+        .btn-primary { background-color: #0078d4; color: #ffffff; }
+        .btn-primary:hover { background-color: #106ebe; }
+        .btn-secondary { background-color: #f3f2f1; color: #323130; border-color: #8a8886; }
+        .btn-secondary:hover { background-color: #edebe9; }
+        .hidden { display: none !important; }
+        #status-message { padding: 10px; border-radius: 2px; font-weight: 500; margin-bottom: 10px; }
+        .status-error { background-color: #fde7e9; color: #a80000; border-left: 4px solid #a80000; }
+        .status-info { background-color: #eff6fc; color: #0078d4; border-left: 4px solid #0078d4; }
+        .status-success { background-color: #dff6dd; color: #107c41; border-left: 4px solid #107c41; }
+        .loader { border: 3px solid #f3f2f1; border-top: 3px solid #0078d4; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <header id="addin-header">
+        <img src="hedelius_logo.png" alt="Hedelius Logo" class="logo">
+        <h1 class="title">Hedelius-Outlook-Add-In</h1>
+    </header>
+
+    <div id="main-content">
+        <div id="status-container" class="hidden">
+            <div id="status-message"></div>
+        </div>
+        
+        <div id="loading-state" class="hidden">
+            <div class="loader"></div>
+            <p style="text-align: center; color: #605e5c;">Daten werden geladen...</p>
+        </div>
+
+        <div id="app-container" class="container hidden">
+            <div id="section-filled" class="section">
+                <h2>Vorhandene Informationen</h2>
+                <div id="filled-fields-container"></div>
+            </div>
+
+            <div id="section-missing" class="section">
+                <h2>Fehlende Eingaben</h2>
+                <div id="missing-fields-form"></div>
+                <button id="btn-save-missing" class="btn btn-secondary" style="margin-top: 10px;">Eingaben speichern</button>
+            </div>
+
+            <div id="section-actions" class="section">
+                <h2>Aktionen</h2>
+                <button id="btn-sap-transfer" class="btn btn-primary hidden">An SAP übergeben</button>
+                <button id="btn-sap-forward" class="btn btn-primary hidden">An SAP-Besitzer weiterleiten</button>
+                <button id="btn-close-ticket" class="btn btn-secondary">Abschließen</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="taskpane.js"></script>
+</body>
+</html>
