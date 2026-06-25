@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp 
+  xmlns="http://schemas.microsoft.com/office/appshere/manifest/1.0" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+  xsi:type="MailApp">
+  
+  <Id>9c8b7412-1234-4567-a89b-bcdef1234567</Id>
+  <Version>1.1.0.0</Version>
+  <ProviderName>Hedelius</ProviderName>
+  <DefaultLocale>de-DE</DefaultLocale>
+  <DisplayName DefaultValue="Hedelius-Outlook-Add-In"/>
+  <Description DefaultValue="Dynamics 365 Ticket-Integration für Hedelius Maschinenfabrik"/>
+
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://IHRE_GITHUB_PAGES_URL/taskpane.html"/>
+        <RequestedHeight>300</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+
+  <Permissions>ReadWriteItem</Permissions>
+  
+  <Rule xsi:type="RuleCollection" Mode="Or">
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read" />
+  </Rule>
+</OfficeApp>
