@@ -11,7 +11,7 @@ const msalConfig = {
 const msalInstance = new msal.PublicClientApplication(msalConfig);
 
 const D365_CONFIG = {
-    apiEndpoint: "https://dev-hedelius.crm4.dynamics.com/api/data/v9.2", // Ersetzen durch Ihre Dynamics CRM API-URL
+    apiEndpoint: "https://hedelius.crm4.dynamics.com/api/data/v9.2", // Ersetzen durch Ihre Dynamics CRM API-URL
     fields: [
         { logicalName: "title", label: "Anfragetitel", type: "text" },
         { logicalName: "_customerid_value@OData.Community.Display.V1.FormattedValue", logicalNameRaw: "_customerid_value", label: "Kunde", type: "text", readOnly: true },
