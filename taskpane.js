@@ -19,9 +19,7 @@ const D365_CONFIG = {
         { logicalName: "con_maschinennummer", label: "Maschinennummer", type: "text" },
         { logicalName: "description", label: "Fehlerbeschreibung", type: "textarea" },
         { logicalName: "prioritycode@OData.Community.Display.V1.FormattedValue", logicalNameRaw: "prioritycode", label: "Schweregrad Priorität", type: "text", readOnly: true },
-        { logicalName: "con_sapid", label: "SAP-Servicemeldungsnummer", type: "text" },
-        { logicalName: "new_sap_besitzer", label: "SAP-Besitzer", type: "text" },
-        { logicalName: "new_meldungsbezugstyp", label: "Meldungsbezugstyp", type: "text" }
+        { logicalName: "con_sapid", label: "SAP-Servicemeldungsnummer", type: "text" }
     ]
 };
 
