@@ -59,6 +59,7 @@ async function initAddIn() {
  * Sicheres Beziehen des Dynamics Access Tokens (OAuth2 PKCE Flow)
  */
 async function getDynamicsAccessToken() {
+    return "MOCK_TOKEN"
     const loginRequest = {
         scopes: [`${D365_CONFIG.apiEndpoint.split('/api')[0]}/user_impersonation`]
     };
