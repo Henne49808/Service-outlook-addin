@@ -227,7 +227,7 @@ async function fetchDynamicsData(messageId) {
     // Kein $expand auf regardingobjectid verwenden: regardingobjectid ist polymorph.
     // Stattdessen erst die E-Mail lesen und anschließend den Incident separat laden.
     const emailUrl = buildDataverseUrl("emails", {
-        "$select": "emailid,messageid,subject,_regardingobjectid_value",
+        "$select": "activityid,messageid,subject,_regardingobjectid_value",
         "$filter": `messageid eq '${safeMessageId}'`
     });
 
