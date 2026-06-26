@@ -3,7 +3,7 @@ const msalConfig = {
     auth: {
         clientId: "8d7de9fa-b100-4963-9873-28f5daacf2ee", 
         authority: "https://login.microsoftonline.com/0eb9b61a-77ec-433c-9c80-d09668b40aab",
-        redirectUri: window.location.href
+        redirectUri: window.location.origin + window.location.pathname
     },
     cache: { cacheLocation: "localStorage", storeAuthStateInCookie: true }
 };
@@ -106,7 +106,7 @@ async function fetchDynamicsData(messageId) {
         "Authorization": `Bearer ${token}`, "Accept": "application/json", "OData-MaxVersion": "4.0", "OData-Version": "4.0",
         "Prefer": 'odata.include-annotations="OData.Community.Display.V1.FormattedValue"'
     };
-    const queryUrl = `${D365_CONFIG.apiEndpoint}/emails?$filter=messageid eq '${encodeURIComponent(messageId)}'&$expand=regardingobjectid_incident($select=title,new_maschinennummer,description,prioritycode,new_sap_servicemeldungsnummer,new_sap_besitzer,new_meldungsbezugstyp,new_sap_syncstatus,_customerid_value,_primarycontactid_value)`;
+    const queryUrl = `${D365_CONFIG.apiEndpoint}/emails?$filter=messageid eq '${encodeURIComponent(messageId)}'&$expand=regardingobjectid_incident($select=title,con_maschinennummer,description,prioritycode,new_sap_servicemeldungsnummer,new_sap_besitzer,new_meldungsbezugstyp,new_sap_syncstatus,_customerid_value,_primarycontactid_value)`;
     const response = await fetch(queryUrl, { method: "GET", headers: headers });
     if (!response.ok) throw new Error(`Dynamics-Fehler (Status: ${response.status})`);
     const data = await response.json();
@@ -185,7 +185,7 @@ async function handleSapTransfer() {
 }
 
 function handleSapForward() {
-    Office.context.mailbox.item.displayReplyAllForm2({
+    Office.context.mailbox.item.displayReplyAllForm({
         "htmlBody": `<p>Meldung zur Übernahme an SAP-Besitzer.</p><hr/>`, "attachments": [],
         "callback": function (asyncResult) { if (asyncResult.status === Office.AsyncResultStatus.Failed) showStatus("Fehler beim Weiterleiten.", "error"); }
     });
