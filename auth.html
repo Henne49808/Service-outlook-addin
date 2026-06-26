@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Hedelius Login</title>
+    <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+</head>
+<body>
+    <p style="font-family: Segoe UI; padding: 20px;">Anmeldung läuft...</p>
+    <script>
+        const msalConfig = {
+            auth: {
+                clientId: "8d7de9fa-b100-4963-9873-28f5daacf2ee",
+                authority: "https://login.microsoftonline.com/0eb9b61a-77ec-433c-9c80-d09668b40aab",
+                redirectUri: "https://henne49808.github.io/Service-outlook-addin/auth.html"
+            },
+            cache: { cacheLocation: "localStorage", storeAuthStateInCookie: true }
+        };
+
+        const msalInstance = new msal.PublicClientApplication(msalConfig);
+
+        msalInstance.handleRedirectPromise().then(result => {
+            if (result && result.accessToken) {
+                // ✅ Token in localStorage speichern, Add-In liest es aus
+                localStorage.setItem("lfp_access_token", result.accessToken);
+                localStorage.setItem("lfp_token_expiry", result.expiresOn.getTime());
+                window.close(); // Fenster schließt sich selbst
+            } else {
+                // Noch kein Token – Login starten
+                msalInstance.acquireTokenRedirect({
+                    scopes: ["https://hedelius.api.crm4.dynamics.com/user_impersonation"]
+                });
+            }
+        }).catch(err => {
+            document.body.innerHTML = `<p style="color:red; font-family: Segoe UI; padding:20px;">Login-Fehler: ${err.message}</p>`;
+        });
+    </script>
+</body>
+</html>
