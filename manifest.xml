@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <OfficeApp 
-  xmlns="http://schemas.microsoft.com/office/appshere/manifest/1.0" 
+  xmlns="http://schemas.microsoft.com/office/appsweb/manifest/1.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
   xsi:type="MailApp">
   
