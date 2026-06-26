@@ -1,12 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Hedelius Login</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Hedelius – Anmeldung</title>
     <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: #faf9f8;
+            color: #323130;
+        }
+        .logo { width: 180px; margin-bottom: 24px; }
+        .status { font-size: 14px; color: #605e5c; margin-top: 12px; }
+        .error { color: #a80000; background: #fde7e9; padding: 12px; border-radius: 4px; border-left: 4px solid #a80000; max-width: 400px; margin-top: 16px; }
+        .loader { border: 3px solid #f3f2f1; border-top: 3px solid #0078d4; border-radius: 50%; width: 32px; height: 32px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
-    <p style="font-family: Segoe UI; padding: 20px;">Anmeldung läuft...</p>
+    <img src="hedelius_logo.png" alt="Hedelius" class="logo">
+    <div class="loader" id="loader"></div>
+    <p class="status" id="status">Anmeldung wird verarbeitet...</p>
+    <div id="error-box" style="display:none" class="error"></div>
+
     <script>
         const msalConfig = {
             auth: {
@@ -17,23 +40,66 @@
             cache: { cacheLocation: "localStorage", storeAuthStateInCookie: true }
         };
 
-        const msalInstance = new msal.PublicClientApplication(msalConfig);
+        function showError(msg) {
+            document.getElementById("loader").style.display = "none";
+            document.getElementById("status").style.display = "none";
+            document.getElementById("error-box").style.display = "block";
+            document.getElementById("error-box").innerText = "Fehler: " + msg;
+        }
 
-        msalInstance.handleRedirectPromise().then(result => {
-            if (result && result.accessToken) {
-                // ✅ Token in localStorage speichern, Add-In liest es aus
-                localStorage.setItem("lfp_access_token", result.accessToken);
-                localStorage.setItem("lfp_token_expiry", result.expiresOn.getTime());
-                window.close(); // Fenster schließt sich selbst
-            } else {
-                // Noch kein Token – Login starten
-                msalInstance.acquireTokenRedirect({
-                    scopes: ["https://hedelius.api.crm4.dynamics.com/user_impersonation"]
-                });
+        async function run() {
+            const msalInstance = new msal.PublicClientApplication(msalConfig);
+
+            try {
+                // Schritt 1: Redirect-Ergebnis verarbeiten
+                const result = await msalInstance.handleRedirectPromise();
+
+                if (result && result.accessToken) {
+                    // ✅ Token erfolgreich erhalten – in localStorage speichern
+                    document.getElementById("status").innerText = "Anmeldung erfolgreich. Fenster wird geschlossen...";
+                    localStorage.setItem("lfp_access_token", result.accessToken);
+                    localStorage.setItem("lfp_token_expiry", result.expiresOn.getTime().toString());
+                    localStorage.setItem("lfp_account", JSON.stringify(result.account));
+
+                    // Kurze Pause damit localStorage sicher geschrieben ist
+                    setTimeout(() => { window.close(); }, 500);
+
+                } else {
+                    // Schritt 2: Noch kein Token – Login starten
+                    document.getElementById("status").innerText = "Weiterleitung zur Anmeldung...";
+
+                    const accounts = msalInstance.getAllAccounts();
+                    const loginRequest = {
+                        scopes: ["https://hedelius.api.crm4.dynamics.com/user_impersonation"],
+                        prompt: "select_account"
+                    };
+
+                    if (accounts.length > 0) {
+                        // Account vorhanden – silent versuchen
+                        try {
+                            loginRequest.account = accounts[0];
+                            const silentResult = await msalInstance.acquireTokenSilent(loginRequest);
+                            localStorage.setItem("lfp_access_token", silentResult.accessToken);
+                            localStorage.setItem("lfp_token_expiry", silentResult.expiresOn.getTime().toString());
+                            localStorage.setItem("lfp_account", JSON.stringify(silentResult.account));
+                            document.getElementById("status").innerText = "Anmeldung erfolgreich. Fenster wird geschlossen...";
+                            setTimeout(() => { window.close(); }, 500);
+                        } catch(e) {
+                            // Silent fehlgeschlagen – Redirect
+                            await msalInstance.acquireTokenRedirect(loginRequest);
+                        }
+                    } else {
+                        // Kein Account – Redirect zu Microsoft Login
+                        await msalInstance.acquireTokenRedirect(loginRequest);
+                    }
+                }
+
+            } catch (error) {
+                showError(error.message);
             }
-        }).catch(err => {
-            document.body.innerHTML = `<p style="color:red; font-family: Segoe UI; padding:20px;">Login-Fehler: ${err.message}</p>`;
-        });
+        }
+
+        run();
     </script>
 </body>
 </html>
