@@ -219,4 +219,3 @@ function showStatus(text, type) {
     container.classList.remove("hidden");
     if(type !== "error") setTimeout(() => { container.classList.add("hidden"); }, 4000);
 }
-}
