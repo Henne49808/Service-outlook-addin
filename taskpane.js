@@ -1,4 +1,4 @@
-// 1. ZENTRALE AUTHENTIFIZIERUNGS-KONFIGURATION (Weg A)
+// 1. AUTHENTIFIZIERUNGS-KONFIGURATION
 const msalConfig = {
     auth: {
         clientId: "8d7de9fa-b100-4963-9873-28f5daacf2ee", 
@@ -8,8 +8,20 @@ const msalConfig = {
     cache: { cacheLocation: "localStorage", storeAuthStateInCookie: true }
 };
 
-const msalInstance = new msal.PublicClientApplication(msalConfig);
+// ABSICHERUNG: MSAL-Instanz nur erstellen, wenn die Bibliothek auch wirklich geladen wurde!
+let msalInstance = null;
+try {
+    if (typeof msal !== 'undefined') {
+        msalInstance = new msal.PublicClientApplication(msalConfig);
+        console.log("✅ LFP: MSAL-Bibliothek erfolgreich initialisiert.");
+    } else {
+        console.error("❌ LFP-CRITICAL: Die 'msal-browser.min.js' wurde im HTML nicht geladen oder nicht gefunden!");
+    }
+} catch (e) {
+    console.error("❌ LFP-CRITICAL: Fehler beim Erstellen der MSAL-Instanz: ", e);
+}
 
+// 2. DYNAMICS 365 KONFIGURATION
 const D365_CONFIG = {
     apiEndpoint: "https://hedelius.api.crm4.dynamics.com/api/data/v9.2", // Ersetzen durch Ihre Dynamics CRM API-URL
     fields: [
