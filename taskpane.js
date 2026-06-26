@@ -1,26 +1,7 @@
 // 1. AUTHENTIFIZIERUNGS-KONFIGURATION
-const msalConfig = {
-    auth: {
-        clientId: "8d7de9fa-b100-4963-9873-28f5daacf2ee",
-        authority: "https://login.microsoftonline.com/0eb9b61a-77ec-433c-9c80-d09668b40aab",
-        // ✅ FIX #1: Feste redirectUri statt window.location.href
-        redirectUri: "https://henne49808.github.io/Service-outlook-addin/taskpane.html"
-    },
-    cache: { cacheLocation: "localStorage", storeAuthStateInCookie: true }
-};
-
-// ABSICHERUNG: MSAL-Instanz nur erstellen, wenn die Bibliothek auch wirklich geladen wurde!
-let msalInstance = null;
-try {
-    if (typeof msal !== 'undefined') {
-        msalInstance = new msal.PublicClientApplication(msalConfig);
-        console.log("✅ LFP: MSAL-Bibliothek erfolgreich initialisiert.");
-    } else {
-        console.error("❌ LFP-CRITICAL: Die 'msal-browser.min.js' wurde im HTML nicht geladen oder nicht gefunden!");
-    }
-} catch (e) {
-    console.error("❌ LFP-CRITICAL: Fehler beim Erstellen der MSAL-Instanz: ", e);
-}
+// MSAL wird in taskpane.js nicht mehr für Login verwendet –
+// das übernimmt auth.html im eigenen Fenster.
+// Hier nur noch Token aus localStorage lesen.
 
 // 2. DYNAMICS 365 KONFIGURATION
 const D365_CONFIG = {
@@ -32,15 +13,12 @@ const D365_CONFIG = {
 
 let currentState = { incidentId: null, incidentData: {}, emailData: {}, internetMessageId: null };
 
-// 3. ROBUSTER ADD-IN START
+// 3. ADD-IN START
 Office.onReady(function (info) {
-    console.log("🚀 LFP: Office.onReady hat signalisiert. Host ist: " + info.host);
-
+    console.log("🚀 LFP: Office.onReady – Host: " + info.host);
     if (info.host === Office.HostType.Outlook) {
-        console.log("📩 LFP: Outlook-Kontext erfolgreich erkannt. Starte Add-In...");
         initAddIn();
     } else {
-        console.error("❌ LFP: Add-In wurde nicht in Outlook geöffnet.");
         showStatus("Fehler: Add-In außerhalb von Outlook geöffnet.", "error");
     }
 });
@@ -51,66 +29,110 @@ async function initAddIn() {
         if (!Office.context.mailbox.item) throw new Error("Kein Zugriff auf das E-Mail-Element.");
         currentState.internetMessageId = Office.context.mailbox.item.internetMessageId;
 
+        // Token prüfen – wenn keiner vorhanden, Login-Button anzeigen
+        const token = getStoredToken();
+        if (!token) {
+            toggleLoading(false);
+            showLoginButton();
+            return;
+        }
+
         await fetchDynamicsData(currentState.internetMessageId);
         renderUI();
         setupEventHandlers();
         document.getElementById("app-container").classList.remove("hidden");
 
     } catch (error) {
+        console.error("❌ Fehler:", error);
         showStatus(error.message, "error");
     } finally {
         toggleLoading(false);
     }
 }
 
-// 4. DYNAMICS 365 TOKEN & API LOGIK
-async function getDynamicsAccessToken() {
+// 4. TOKEN-VERWALTUNG
+function getStoredToken() {
     const token = localStorage.getItem("lfp_access_token");
     const expiry = localStorage.getItem("lfp_token_expiry");
-    const isValid = token && expiry && Date.now() < parseInt(expiry);
-
-    if (isValid) {
-        return token;
+    if (!token || !expiry) return null;
+    // Token noch mindestens 2 Minuten gültig?
+    if (Date.now() > parseInt(expiry) - 120000) {
+        localStorage.removeItem("lfp_access_token");
+        localStorage.removeItem("lfp_token_expiry");
+        return null;
     }
+    return token;
+}
 
-    // Token fehlt oder abgelaufen → Login-Fenster öffnen
-    return new Promise((resolve, reject) => {
-        const loginWin = window.open(
-            "https://henne49808.github.io/Service-outlook-addin/auth.html",
-            "HedeliusLogin",
-            "width=500,height=650,left=200,top=100"
-        );
+function showLoginButton() {
+    // Alten Button entfernen falls vorhanden
+    const existing = document.getElementById("btn-manual-login");
+    if (existing) existing.remove();
+
+    const container = document.getElementById("login-container");
+    container.classList.remove("hidden");
+
+    document.getElementById("btn-manual-login").onclick = () => {
+        const authUrl = "https://henne49808.github.io/Service-outlook-addin/auth.html";
+        const loginWin = window.open(authUrl, "HedeliusLogin", "width=520,height=680,left=200,top=80");
 
         if (!loginWin) {
-            reject(new Error("Login-Fenster konnte nicht geöffnet werden. Bitte Popups erlauben."));
+            // Fenster wurde blockiert – direkte Link-Alternative anzeigen
+            showStatus("Popup blockiert. Bitte den Login-Link verwenden.", "error");
+            document.getElementById("login-link-container").classList.remove("hidden");
             return;
         }
 
-        // Alle 500ms prüfen ob Token angekommen ist
-        const checkInterval = setInterval(() => {
-            const newToken = localStorage.getItem("lfp_access_token");
-            const newExpiry = localStorage.getItem("lfp_token_expiry");
+        document.getElementById("btn-manual-login").disabled = true;
+        document.getElementById("btn-manual-login").innerText = "⏳ Warte auf Anmeldung...";
 
-            if (newToken && newExpiry && Date.now() < parseInt(newExpiry)) {
+        // Alle 800ms prüfen ob Token im localStorage angekommen ist
+        const checkInterval = setInterval(async () => {
+            const token = getStoredToken();
+
+            if (token) {
                 clearInterval(checkInterval);
-                resolve(newToken);
+                document.getElementById("login-container").classList.add("hidden");
+                toggleLoading(true);
+                try {
+                    await fetchDynamicsData(currentState.internetMessageId);
+                    renderUI();
+                    setupEventHandlers();
+                    document.getElementById("app-container").classList.remove("hidden");
+                } catch(err) {
+                    showStatus(err.message, "error");
+                } finally {
+                    toggleLoading(false);
+                }
             }
 
-            // Fenster wurde geschlossen ohne Token
+            // Fenster geschlossen ohne Token?
             if (loginWin.closed) {
                 clearInterval(checkInterval);
-                const finalToken = localStorage.getItem("lfp_access_token");
-                if (finalToken) resolve(finalToken);
-                else reject(new Error("Anmeldung abgebrochen."));
+                const finalToken = getStoredToken();
+                if (!finalToken) {
+                    document.getElementById("btn-manual-login").disabled = false;
+                    document.getElementById("btn-manual-login").innerText = "🔐 Bei Hedelius anmelden";
+                    showStatus("Anmeldung nicht abgeschlossen. Bitte erneut versuchen.", "error");
+                }
             }
-        }, 500);
-    });
+        }, 800);
+    };
 }
 
+async function getDynamicsAccessToken() {
+    const token = getStoredToken();
+    if (token) return token;
+
+    // Token abgelaufen – Login erneut anfordern
+    document.getElementById("app-container").classList.add("hidden");
+    showLoginButton();
+    throw new Error("Sitzung abgelaufen. Bitte erneut anmelden.");
+}
+
+// 5. DYNAMICS 365 API
 async function fetchDynamicsData(messageId) {
     const token = await getDynamicsAccessToken();
-    if (!token) return; // Redirect läuft – abbrechen
-
     const headers = {
         "Authorization": `Bearer ${token}`,
         "Accept": "application/json",
@@ -118,25 +140,19 @@ async function fetchDynamicsData(messageId) {
         "OData-Version": "4.0",
         "Prefer": 'odata.include-annotations="OData.Community.Display.V1.FormattedValue"'
     };
-
-    // ✅ FIX #5: Feldname korrigiert: new_maschinennummer → con_maschinennummer
     const queryUrl = `${D365_CONFIG.apiEndpoint}/emails?$filter=messageid eq '${encodeURIComponent(messageId)}'&$expand=regardingobjectid_incident($select=title,con_maschinennummer,description,prioritycode,new_sap_servicemeldungsnummer,new_sap_besitzer,new_meldungsbezugstyp,new_sap_syncstatus,_customerid_value,_primarycontactid_value)`;
-
-    const response = await fetch(queryUrl, { method: "GET", headers: headers });
+    const response = await fetch(queryUrl, { method: "GET", headers });
     if (!response.ok) throw new Error(`Dynamics-Fehler (Status: ${response.status})`);
-
     const data = await response.json();
     if (!data.value || data.value.length === 0) throw new Error("E-Mail ist in Dynamics 365 nicht verknüpft.");
-
     currentState.emailData = data.value[0];
     const incident = currentState.emailData.regardingobjectid_incident;
     if (!incident) throw new Error("Kein verknüpfter Dynamics-Vorfall gefunden.");
-
     currentState.incidentId = incident.incidentid;
     currentState.incidentData = incident;
 }
 
-// 5. OBERFLÄCHEN-STEUERUNG (UI RENDERING)
+// 6. UI RENDERING
 function renderUI() {
     const filledContainer = document.getElementById("filled-fields-container");
     const missingForm = document.getElementById("missing-fields-form");
@@ -167,7 +183,6 @@ function renderUI() {
 
     if (!hasMissing) {
         document.getElementById("btn-save-missing").classList.add("hidden");
-        // ✅ FIX #6: Leeren Bereich ausblenden wenn keine fehlenden Felder
         document.getElementById("section-missing").classList.add("hidden");
     } else {
         document.getElementById("btn-save-missing").classList.remove("hidden");
@@ -179,17 +194,11 @@ function renderUI() {
 
 function evaluateActionButtonsLogic() {
     const inc = currentState.incidentData;
-    if (inc.new_sap_syncstatus === "übergabefähig") {
-        document.getElementById("btn-sap-transfer").classList.remove("hidden");
-    } else {
-        document.getElementById("btn-sap-transfer").classList.add("hidden");
-    }
+    if (inc.new_sap_syncstatus === "übergabefähig") document.getElementById("btn-sap-transfer").classList.remove("hidden");
+    else document.getElementById("btn-sap-transfer").classList.add("hidden");
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (inc.new_sap_besitzer && emailRegex.test(inc.new_sap_besitzer.trim())) {
-        document.getElementById("btn-sap-forward").classList.remove("hidden");
-    } else {
-        document.getElementById("btn-sap-forward").classList.add("hidden");
-    }
+    if (inc.new_sap_besitzer && emailRegex.test(inc.new_sap_besitzer.trim())) document.getElementById("btn-sap-forward").classList.remove("hidden");
+    else document.getElementById("btn-sap-forward").classList.add("hidden");
 }
 
 function setupEventHandlers() {
@@ -199,33 +208,22 @@ function setupEventHandlers() {
     document.getElementById("btn-close-ticket").onclick = handleCloseTicket;
 }
 
-// 6. BUTTON-AKTIONEN
+// 7. BUTTON-AKTIONEN
 async function saveMissingFields() {
     toggleLoading(true);
     const updatePayload = {};
-
     D365_CONFIG.fields.forEach(field => {
-        const inputElement = document.getElementById(`input-${field.logicalName}`);
-        if (inputElement && inputElement.value.trim() !== "") {
-            updatePayload[field.logicalName] = inputElement.value.trim();
-        }
+        const el = document.getElementById(`input-${field.logicalName}`);
+        if (el && el.value.trim()) updatePayload[field.logicalName] = el.value.trim();
     });
-
-    if (Object.keys(updatePayload).length === 0) {
-        toggleLoading(false);
-        return;
-    }
-
+    if (Object.keys(updatePayload).length === 0) { toggleLoading(false); return; }
     try {
         await updateIncidentEntity(updatePayload);
         showStatus("Eingaben erfolgreich gespeichert.", "success");
         await fetchDynamicsData(currentState.internetMessageId);
         renderUI();
-    } catch (err) {
-        showStatus("Fehler beim Speichern.", "error");
-    } finally {
-        toggleLoading(false);
-    }
+    } catch (err) { showStatus("Fehler beim Speichern: " + err.message, "error"); }
+    finally { toggleLoading(false); }
 }
 
 async function handleSapTransfer() {
@@ -235,22 +233,16 @@ async function handleSapTransfer() {
         showStatus("Status an SAP übermittelt.", "success");
         await fetchDynamicsData(currentState.internetMessageId);
         renderUI();
-    } catch (err) {
-        showStatus("Fehler bei SAP-Übergabe.", "error");
-    } finally {
-        toggleLoading(false);
-    }
+    } catch (err) { showStatus("Fehler bei SAP-Übergabe: " + err.message, "error"); }
+    finally { toggleLoading(false); }
 }
 
 function handleSapForward() {
-    // ✅ FIX #7: displayReplyAllForm2 → displayReplyAllForm
     Office.context.mailbox.item.displayReplyAllForm({
         "htmlBody": `<p>Meldung zur Übernahme an SAP-Besitzer.</p><hr/>`,
         "attachments": [],
         "callback": function (asyncResult) {
-            if (asyncResult.status === Office.AsyncResultStatus.Failed) {
-                showStatus("Fehler beim Weiterleiten.", "error");
-            }
+            if (asyncResult.status === Office.AsyncResultStatus.Failed) showStatus("Fehler beim Weiterleiten.", "error");
         }
     });
 }
@@ -262,17 +254,12 @@ async function handleCloseTicket() {
         showStatus("Vorfall erfolgreich geschlossen.", "success");
         await fetchDynamicsData(currentState.internetMessageId);
         renderUI();
-    } catch (err) {
-        showStatus("Fehler beim Schließen des Tickets.", "error");
-    } finally {
-        toggleLoading(false);
-    }
+    } catch (err) { showStatus("Fehler beim Schließen: " + err.message, "error"); }
+    finally { toggleLoading(false); }
 }
 
 async function updateIncidentEntity(payload) {
     const token = await getDynamicsAccessToken();
-    if (!token) return;
-
     const url = `${D365_CONFIG.apiEndpoint}/incidents(${currentState.incidentId})`;
     const response = await fetch(url, {
         method: "PATCH",
@@ -288,7 +275,7 @@ async function updateIncidentEntity(payload) {
     if (!response.ok) throw new Error(`Update fehlgeschlagen (Status: ${response.status}).`);
 }
 
-// 7. HELPER FUNCTIONS
+// 8. HELPER FUNCTIONS
 function toggleLoading(isLoading) {
     document.getElementById("loading-state").className = isLoading ? "" : "hidden";
 }
@@ -299,7 +286,5 @@ function showStatus(text, type) {
     msgEl.innerText = text;
     msgEl.className = type === "error" ? "status-error" : "status-success";
     container.classList.remove("hidden");
-    if (type !== "error") {
-        setTimeout(() => { container.classList.add("hidden"); }, 4000);
-    }
+    if (type !== "error") setTimeout(() => container.classList.add("hidden"), 4000);
 }
