@@ -65,14 +65,14 @@ function getStoredToken() {
 }
 
 function showLoginButton() {
-    // Alten Button entfernen falls vorhanden
-    const existing = document.getElementById("btn-manual-login");
-    if (existing) existing.remove();
-
     const container = document.getElementById("login-container");
     container.classList.remove("hidden");
 
-    document.getElementById("btn-manual-login").onclick = () => {
+    const btn = document.getElementById("btn-manual-login");
+    btn.disabled = false;
+    btn.innerText = "🔐 Bei Hedelius anmelden";
+
+    btn.onclick = () => {
         const authUrl = "https://henne49808.github.io/Service-outlook-addin/auth.html";
         const loginWin = window.open(authUrl, "HedeliusLogin", "width=520,height=680,left=200,top=80");
 
@@ -83,8 +83,8 @@ function showLoginButton() {
             return;
         }
 
-        document.getElementById("btn-manual-login").disabled = true;
-        document.getElementById("btn-manual-login").innerText = "⏳ Warte auf Anmeldung...";
+        btn.disabled = true;
+        btn.innerText = "⏳ Warte auf Anmeldung...";
 
         // Alle 800ms prüfen ob Token im localStorage angekommen ist
         const checkInterval = setInterval(async () => {
@@ -111,8 +111,8 @@ function showLoginButton() {
                 clearInterval(checkInterval);
                 const finalToken = getStoredToken();
                 if (!finalToken) {
-                    document.getElementById("btn-manual-login").disabled = false;
-                    document.getElementById("btn-manual-login").innerText = "🔐 Bei Hedelius anmelden";
+                    btn.disabled = false;
+                    btn.innerText = "🔐 Bei Hedelius anmelden";
                     showStatus("Anmeldung nicht abgeschlossen. Bitte erneut versuchen.", "error");
                 }
             }
