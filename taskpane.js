@@ -46,78 +46,65 @@ Office.onReady(function (info) {
 });
 
 async function initAddIn() {
-    console.log("🔄 LFP: initAddIn() wurde aufgerufen.");
     toggleLoading(true);
-
     try {
-        if (!Office.context.mailbox.item) {
-            throw new Error("Kein Zugriff auf das aktuelle E-Mail-Element.");
-        }
-
+        if (!Office.context.mailbox.item) throw new Error("Kein Zugriff auf das E-Mail-Element.");
         currentState.internetMessageId = Office.context.mailbox.item.internetMessageId;
-        console.log("🆔 LFP: InternetMessageId ermittelt: " + currentState.internetMessageId);
-
-        // ✅ FIX #2: Redirect-Ergebnis nach Login-Rückkehr auswerten
-        const redirectResult = await msalInstance.handleRedirectPromise();
-        if (redirectResult) {
-            console.log("✅ LFP: Token nach Redirect erfolgreich erhalten.");
-        }
-
-        // Prüfen ob ein Account vorhanden ist
-        const accounts = msalInstance.getAllAccounts();
-        if (accounts.length === 0) {
-            // ✅ FIX #3: Kein Popup – stattdessen Redirect einleiten
-            console.log("🔐 LFP: Kein Account gefunden. Starte Redirect-Login...");
-            await msalInstance.acquireTokenRedirect({
-                scopes: [`${D365_CONFIG.apiEndpoint.split('/api')[0]}/user_impersonation`]
-            });
-            return; // Seite wird weitergeleitet – Code danach läuft nicht mehr
-        }
 
         await fetchDynamicsData(currentState.internetMessageId);
-        console.log("📊 LFP: Dynamics-Daten erfolgreich abgerufen.");
-
         renderUI();
         setupEventHandlers();
         document.getElementById("app-container").classList.remove("hidden");
-        console.log("✨ LFP: Oberfläche erfolgreich gezeichnet!");
 
     } catch (error) {
-        console.error("❌ LFP-Fehler im Ablauf: ", error);
         showStatus(error.message, "error");
     } finally {
         toggleLoading(false);
-        console.log("🏁 LFP: initAddIn-Prozess beendet.");
     }
 }
 
 // 4. DYNAMICS 365 TOKEN & API LOGIK
 async function getDynamicsAccessToken() {
-    const loginRequest = {
-        scopes: [`${D365_CONFIG.apiEndpoint.split('/api')[0]}/user_impersonation`]
-    };
+    const token = localStorage.getItem("lfp_access_token");
+    const expiry = localStorage.getItem("lfp_token_expiry");
+    const isValid = token && expiry && Date.now() < parseInt(expiry);
 
-    try {
-        const account = msalInstance.getAllAccounts()[0];
-        if (account) {
-            loginRequest.account = account;
-            // Zuerst silent versuchen (kein Popup, kein Redirect)
-            const tokenResponse = await msalInstance.acquireTokenSilent(loginRequest);
-            return tokenResponse.accessToken;
-        } else {
-            // Kein Account – Redirect einleiten
-            await msalInstance.acquireTokenRedirect(loginRequest);
-            return null;
-        }
-    } catch (error) {
-        // ✅ FIX #4: Bei Interaction-Required → Redirect statt Popup
-        if (error instanceof msal.InteractionRequiredAuthError) {
-            console.warn("⚠️ LFP: Silent-Token fehlgeschlagen, starte Redirect...");
-            await msalInstance.acquireTokenRedirect(loginRequest);
-            return null;
-        }
-        throw error;
+    if (isValid) {
+        return token;
     }
+
+    // Token fehlt oder abgelaufen → Login-Fenster öffnen
+    return new Promise((resolve, reject) => {
+        const loginWin = window.open(
+            "https://henne49808.github.io/Service-outlook-addin/auth.html",
+            "HedeliusLogin",
+            "width=500,height=650,left=200,top=100"
+        );
+
+        if (!loginWin) {
+            reject(new Error("Login-Fenster konnte nicht geöffnet werden. Bitte Popups erlauben."));
+            return;
+        }
+
+        // Alle 500ms prüfen ob Token angekommen ist
+        const checkInterval = setInterval(() => {
+            const newToken = localStorage.getItem("lfp_access_token");
+            const newExpiry = localStorage.getItem("lfp_token_expiry");
+
+            if (newToken && newExpiry && Date.now() < parseInt(newExpiry)) {
+                clearInterval(checkInterval);
+                resolve(newToken);
+            }
+
+            // Fenster wurde geschlossen ohne Token
+            if (loginWin.closed) {
+                clearInterval(checkInterval);
+                const finalToken = localStorage.getItem("lfp_access_token");
+                if (finalToken) resolve(finalToken);
+                else reject(new Error("Anmeldung abgebrochen."));
+            }
+        }, 500);
+    });
 }
 
 async function fetchDynamicsData(messageId) {
