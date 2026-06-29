@@ -47,6 +47,20 @@
         #login-container p { color: #605e5c; font-size: 13px; margin-bottom: 16px; }
         #login-link-container { margin-top: 12px; font-size: 12px; color: #605e5c; }
         #login-link-container a { color: #0078d4; }
+
+        .readonly-row { display: grid; grid-template-columns: 42% 58%; gap: 8px; padding: 6px 0; border-bottom: 1px solid #edebe9; }
+        .readonly-row:last-child { border-bottom: 0; }
+        .readonly-label { font-size: 12px; font-weight: 600; color: #605e5c; }
+        .readonly-value { font-size: 13px; color: #323130; word-break: break-word; }
+        .required-marker { color: #a80000; margin-left: 3px; }
+        select { width: 100%; padding: 6px 8px; border: 1px solid #a19f9d; border-radius: 2px; box-sizing: border-box; font-family: inherit; margin-top: 4px; background: #fff; }
+        .description-box { margin-top: 8px; padding: 10px; border: 1px solid #d0d0d0; border-radius: 2px; background: #fafafa; min-height: 80px; max-height: 250px; overflow-y: auto; line-height: 1.45; white-space: normal; word-break: break-word; }
+        .ticket-header-card { border: 1px solid #edebe9; border-radius: 4px; padding: 12px; background: #ffffff; }
+        .ticket-header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .ticket-badge { display: inline-block; background: #e5f1fb; color: #005a9e; font-weight: 700; padding: 4px 8px; border-radius: 999px; }
+        .ticket-title-main { font-size: 15px; font-weight: 600; color: #201f1e; margin-bottom: 8px; word-break: break-word; }
+        .ticket-meta-line { display: flex; flex-direction: column; gap: 4px; color: #605e5c; font-size: 12px; }
+        .ticket-meta-item strong { color: #323130; }
     </style>
 </head>
 <body>
@@ -77,14 +91,26 @@
         <!-- Hauptinhalt nach Login -->
         <div id="app-container" class="hidden">
             <div id="section-filled" class="section">
-                <h2>Ticket</h2>
+                <h2>Ticket-Header</h2>
                 <div id="filled-fields-container"></div>
             </div>
-            <div id="section-missing" class="section">
-                <h2>Fehlende Eingaben</h2>
+
+            <div id="section-missing" class="section hidden">
+                <h2>Fehlende Werte</h2>
                 <div id="missing-fields-form"></div>
                 <button id="btn-save-missing" class="btn btn-secondary" style="margin-top:10px;">Eingaben speichern</button>
             </div>
+
+            <div id="section-complete" class="section hidden">
+                <h2>Ticketinformationen</h2>
+                <div id="complete-fields-container"></div>
+            </div>
+
+            <div id="section-description" class="section">
+                <h2>Beschreibung</h2>
+                <div id="incident-description" class="description-box"><em>Keine Beschreibung vorhanden.</em></div>
+            </div>
+
             <div id="section-actions" class="section">
                 <h2>Aktionen</h2>
                 <button id="btn-sap-transfer" class="btn btn-primary hidden">An SAP übergeben</button>
@@ -98,6 +124,6 @@
         </div>
     </div>
 
-    <script src="taskpane.js?v=20260629-ticket-header"></script>
+    <script src="taskpane.js?v=20260629-ticket-header-fix1"></script>
 </body>
 </html>
