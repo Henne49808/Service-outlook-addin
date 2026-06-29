@@ -363,9 +363,9 @@ function getFieldValue(logicalName) {
 
 function evaluateActionButtonsLogic() {
     const inc = currentState.incidentData || {};
-    const syncStatusRaw = inc.new_sap_syncstatus;
-    const syncStatusFormatted = getFieldValue("new_sap_syncstatus");
-    const sapOwner = inc.new_sap_besitzer;
+    const syncStatusRaw = inc.hed_sapsyncstatus;
+    const syncStatusFormatted = getFieldValue("hed_sapsyncstatus");
+    const sapOwner = inc.con_sapbesitzer;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     const isSapTransferReady =
@@ -429,7 +429,7 @@ async function handleSapTransfer() {
             throw new Error("Der numerische Optionswert für 'zur Übergabe vorgesehen' ist in D365_CONFIG.sapTransferTargetStatusValue noch nicht eingetragen.");
         }
 
-        await updateIncidentEntity({ "new_sap_syncstatus": D365_CONFIG.sapTransferTargetStatusValue });
+        await updateIncidentEntity({ "hed_sapsyncstatus": D365_CONFIG.sapTransferTargetStatusValue });
         showStatus("Status an SAP übermittelt.", "success");
         await fetchDynamicsData(currentState.internetMessageId);
         renderUI();
@@ -441,7 +441,7 @@ async function handleSapTransfer() {
 }
 
 function handleSapForward() {
-    const sapOwner = currentState.incidentData?.new_sap_besitzer?.trim();
+    const sapOwner = currentState.incidentData?.con_sapbesitzer?.trim();
     if (!sapOwner) {
         showStatus("Kein SAP-Besitzer mit E-Mail-Adresse vorhanden.", "error");
         return;
