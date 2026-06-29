@@ -9,7 +9,7 @@ const D365_CONFIG = {
     // Pflichtinformationen für die Vollständigkeitsprüfung in Block 2A/2B.
     requiredFields: [
         { logicalName: "_customerid_value", patchName: "customerid_account", entitySet: "accounts", label: "Kunde", type: "lookup", searchEntitySet: "accounts", searchSelect: "accountid,name", searchFilterField: "name", bindEntitySet: "accounts", idField: "accountid", displayField: "name" },
-        { logicalName: "_primarycontactid_value", patchName: "primarycontactid", entitySet: "contacts", label: "Ansprechpartner", type: "lookup", searchEntitySet: "contacts", searchSelect: "contactid,fullname,emailaddress1", searchFilterField: "fullname", bindEntitySet: "contacts", idField: "contactid", displayField: "fullname" },
+        { logicalName: "_msa_partnercontactid_value", patchName: "msa_partnercontactid", entitySet: "contacts", label: "Ansprechpartner", type: "lookup", searchEntitySet: "contacts", searchSelect: "contactid,fullname,emailaddress1", searchFilterField: "fullname", bindEntitySet: "contacts", idField: "contactid", displayField: "fullname" },
         { logicalName: "con_maschinennummer", label: "Maschinennummer", type: "text" },
         { logicalName: "prioritycode", label: "Priorität", type: "choice", entityLogicalName: "incident", optionsLoaded: false, options: [
             { value: "", label: "Bitte auswählen..." }
@@ -318,7 +318,7 @@ async function fetchDynamicsData(messageId) {
     }
 
     const incidentUrl = buildDataverseUrl(`incidents(${regardingId})`, {
-        "$select": "incidentid,ticketnumber,title,con_maschinennummer,description,prioritycode,con_sapid,con_sapbesitzer,hed_sapsyncstatus,_customerid_value,_primarycontactid_value,statecode,statuscode,createdon,modifiedon"
+        "$select": "incidentid,ticketnumber,title,con_maschinennummer,description,prioritycode,con_sapid,con_sapbesitzer,hed_sapsyncstatus,_customerid_value,_msa_partnercontactid_value,statecode,statuscode,createdon,modifiedon"
     });
 
     const incident = await fetchJsonOrThrow(incidentUrl, { method: "GET", headers }, "Dynamics-Incident-Abfrage");
@@ -791,7 +791,7 @@ function renderLookupSuggestions(field, input, dropdown, clearButton, matches) {
         main.textContent = match[field.displayField] || "(ohne Namen)";
         item.appendChild(main);
 
-        if (field.logicalName === "_primarycontactid_value" && match.emailaddress1) {
+        if (field.logicalName === "_msa_partnercontactid_value" && match.emailaddress1) {
             const sub = document.createElement("span");
             sub.className = "lookup-result-sub";
             sub.textContent = match.emailaddress1;
@@ -914,27 +914,6 @@ function resetFormChangeTracking() {
 function hasAnyInputChanges() {
     if (!currentState.formBaseline) return false;
     return !snapshotsEqual(currentState.formBaseline, getTrackedFormSnapshot());
-}
-
-function isTrackedInputChanged(input) {
-    if (!input || !currentState.formBaseline) return false;
-
-    const key = input.dataset.logicalName || input.id;
-    const field = D365_CONFIG.requiredFields.find(f => f.logicalName === key);
-    const baseline = currentState.formBaseline[key];
-
-    if (!baseline) return false;
-
-    const current = field && field.type === "lookup"
-        ? {
-            value: normalizeComparableValue(input.value).trim(),
-            lookupId: String(input.dataset.lookupId || "")
-        }
-        : {
-            value: normalizeComparableValue(input.value)
-        };
-
-    return !snapshotsEqual({ [key]: baseline }, { [key]: current });
 }
 
 function setElementVisible(elementOrId, isVisible) {
