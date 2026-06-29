@@ -83,110 +83,6 @@
         select { width: 100%; padding: 6px 8px; border: 1px solid #a19f9d; border-radius: 2px; box-sizing: border-box; font-family: inherit; margin-top: 4px; background: #fff; }
         .description-box { margin-top: 8px; }
         .description-edit { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #d0d0d0; border-radius: 2px; background: #fafafa; min-height: 120px; max-height: 280px; overflow-y: auto; line-height: 1.45; resize: vertical; font-family: inherit; }
-        
-        /* --- KOMPLETT REPARIERTER HEADER-BEREICH --- */
-        .ticket-header-card {
-            display: flex;             /* Von Grid auf Flexbox umgestellt für bessere Kontrolle */
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 12px;
-            border: 1px solid #edebe9;
-            border-radius: 6px;
-            padding: 10px;
-            background: #ffffff;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-            box-sizing: border-box;
-            width: 100%;
-        }
-        .ticket-header-left {
-            display: flex;
-            gap: 8px;
-            align-items: flex-start;
-            flex: 1;                  /* Nimmt den restlichen Platz ein */
-            min-width: 0;             /* ZWINGEND ERFORDERLICH gegen den vertikalen Buchstaben-Umbruch */
-        }
-        .ticket-header-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #e8f1fb;
-            color: #005a9e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-        .ticket-header-main { 
-            min-width: 0;             /* Sichert die Unterelemente ab */
-            width: 100%;
-        }
-        
-        .ticket-title-main {
-            font-size: 13px;          /* Noch ein Stück kleiner für extrem schmale Ansichten */
-            font-weight: 600;
-            color: #201f1e;
-            margin: 0 0 4px 0;
-            white-space: nowrap;      /* Verhindert den Umbruch in einzelne Buchstaben */
-            overflow: hidden;         /* Schneidet Text ab, falls das Fenster zu klein ist */
-            text-overflow: ellipsis;  /* Fügt "..." am Ende des Titels an */
-        }
-        .ticket-subtitle {
-            font-size: 11px;
-            color: #605e5c;
-            margin-bottom: 6px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;  /* Auch die Ticket-ID bekommt ein "..." statt Buchstaben-Salat */
-        }
-        .ticket-status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            background: #dff6dd;
-            color: #107c41;
-            font-weight: 600;
-            padding: 1px 6px;
-            border-radius: 999px;
-            font-size: 11px;
-        }
-        .ticket-status-dot {
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            background: #107c41;
-            display: inline-block;
-        }
-        
-        .ticket-header-right {
-            border-left: 1px solid #edebe9;
-            padding-left: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            flex-shrink: 0;           /* Lässt die rechte Spalte niemals zusammendrücken */
-            text-align: left;
-        }
-        .ticket-side-label {
-            font-size: 10px;
-            color: #605e5c;
-            margin-bottom: 1px;
-            white-space: nowrap;
-        }
-        .ticket-side-value {
-            font-size: 11px;
-            color: #201f1e;
-            white-space: nowrap;
-        }
-        .ticket-priority-badge {
-            display: inline-block;
-            background: #fff4ce;
-            color: #8a5800;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 600;
-            white-space: nowrap;      /* Garantiert einzeilige Priorität */
-        }
 
         .lookup-field-group { position: relative; }
         .lookup-dropdown {
@@ -226,8 +122,152 @@
             cursor: pointer;
         }
         
-        /* Überschreibt alte Inline-Klassen am Ende */
-        .ticket-header{padding:8px 10px!important;gap:10px!important}
-        .ticket-title{font-size:13px!important;font-weight:600!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
-        .ticket-sub{font-size:11px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
-        .ticket-badge{font-size:11px!important;padding:2px 6px!important}
+        /* ==========================================================================
+           ABSOLUTER FIX FÜR DIE DYNAMISCH ERZEUGTEN JAVASCRIPT-ELEMENTE (.taskpane.js)
+           ==========================================================================
+        */
+        
+        /* Erzwingt Flexbox für die Card, egal was per JS gebaut wird */
+        .ticket-header-card, .ticket-header {
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
+            padding: 10px !important;
+        }
+
+        /* Verhindert das Zusammendrücken des linken Containers */
+        .ticket-header-left, .ticket-header-main, [class*="-left"] {
+            flex: 1 !important;
+            min-width: 0 !important;   /* Lebenswichtig im Web-Outlook gegen Einzelbuchstaben-Umbruch */
+            display: block !important;
+        }
+
+        /* Schützt den Titel und die Beschreibung vor dem Vertikal-Umbruch */
+        .ticket-title-main, .ticket-title, .ticket-subtitle, .ticket-sub {
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            color: #201f1e !important;
+            margin: 0 0 4px 0 !important;
+            
+            /* Saubere Wort-Umbrüche (bricht nur bei echten Leerzeichen/Bindestrichen um!) */
+            word-break: normal !important;
+            overflow-wrap: break-word !important;
+            white-space: normal !important;
+            
+            /* Falls ein Wort (z.B. eine ellenlange Ticket-ID) doch zu lang ist, wird es sanft gekürzt */
+            text-overflow: ellipsis !important;
+        }
+        
+        .ticket-subtitle, .ticket-sub {
+            font-size: 11px !important;
+            color: #605e5c !important;
+            font-weight: normal !important;
+        }
+
+        /* Hält den rechten Block (Priorität, Datum) absolut stabil auf der rechten Seite */
+        .ticket-header-right, .ticket-right {
+            flex-shrink: 0 !important; /* Verhindert, dass dieser Block schmaler wird */
+            width: 135px !important;   /* Feste Breite für die Metadaten rechts */
+            border-left: 1px solid #edebe9 !important;
+            padding-left: 10px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 6px !important;
+            box-sizing: border-box !important;
+        }
+
+        /* Korrektur für die Schriftgrößen im rechten Infoblock */
+        .ticket-right *, .ticket-header-right * {
+            font-size: 11px !important;
+            line-height: 1.3 !important;
+            white-space: nowrap !important; /* Keine Umbrüche beim Datum */
+        }
+
+        .ticket-status-badge, .ticket-badge {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            background: #dff6dd !important;
+            color: #107c41 !important;
+            font-weight: 600 !important;
+            padding: 2px 8px !important;
+            border-radius: 999px !important;
+            font-size: 11px !important;
+        }
+
+        .ticket-priority-badge, .priority {
+            display: inline-block !important;
+            background: #fff4ce !important;
+            color: #8a5800 !important;
+            padding: 2px 6px !important;
+            border-radius: 4px !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
+        }
+    </style>
+</head>
+<body>
+    <header id="addin-header">
+        <img src="hedelius_logo.png" alt="Hedelius Logo" class="logo">
+        <h1 class="title">Hedelius Service</h1>
+    </header>
+
+    <div id="main-content">
+        <div id="status-container" class="hidden"><div id="status-message"></div></div>
+
+        <div id="loading-state" class="hidden">
+            <div class="loader"></div>
+            <p style="text-align:center; color:#605e5c;">Daten werden geladen...</p>
+        </div>
+
+        <div id="login-container" class="hidden section">
+            <img src="hedelius_logo.png" alt="Hedelius" style="width:120px; margin-bottom:16px;">
+            <p>Bitte melden Sie sich mit Ihrem Hedelius-Konto an, um fortzufahren.</p>
+            <button id="btn-manual-login" class="btn btn-primary">🔐 Bei Hedelius anmelden</button>
+            <div id="login-link-container" class="hidden">
+                <p>Popup blockiert? <a href="https://henne49808.github.io/Service-outlook-addin/auth.html" target="_blank">Login-Seite direkt öffnen</a>, danach diese Seite neu laden.</p>
+            </div>
+        </div>
+
+        <div id="app-container" class="hidden">
+            <div id="section-filled" class="section">
+                <div id="filled-fields-container"></div>
+            </div>
+
+            <div id="section-missing" class="section hidden">
+                <h2>Fehlende Werte</h2>
+                <div id="missing-fields-form"></div>
+                <button id="btn-save-missing" class="btn btn-secondary hidden" hidden style="margin-top:10px;">Eingaben speichern</button>
+            </div>
+
+            <div id="section-complete" class="section hidden">
+                <h2>Ticketinformationen</h2>
+                <div id="complete-fields-container"></div>
+                <button id="btn-save-complete" class="btn btn-secondary hidden" hidden style="margin-top:10px;">Änderungen speichern</button>
+            </div>
+
+            <div id="section-description" class="section">
+                <h2>Beschreibung</h2>
+                <div id="incident-description" class="description-box"><em>Keine Beschreibung vorhanden.</em></div>
+            </div>
+
+            <div id="section-actions" class="section">
+                <h2>Aktionen</h2>
+                <button id="btn-sap-transfer" class="btn btn-primary hidden">An SAP übergeben</button>
+                <button id="btn-sap-forward" class="btn btn-primary hidden">An SAP-Besitzer weiterleiten</button>
+                <button id="btn-close-ticket" class="btn btn-secondary">Ticket abschließen</button>
+                <div class="button-row">
+                    <button id="btn-open-dynamics" class="btn btn-secondary">In Dynamics anzeigen</button>
+                    <button id="btn-free" class="btn btn-secondary" type="button">Frei</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="taskpane.js?v=noname-customer-20260629"></script>
+</body>
+</html>
