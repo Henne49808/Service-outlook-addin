@@ -440,11 +440,50 @@ function renderDescriptionSection() {
 function renderTicketHeader(container) {
     const inc = currentState.incidentData || {};
 
-    appendReadOnlyField(container, "Ticketnummer", getFieldValue("ticketnumber") || "-");
-    appendReadOnlyField(container, "Titel", getFieldValue("title") || "-");
+    const ticketNumber = getFieldValue("ticketnumber") || "-";
+    const title = getFieldValue("title") || "-";
+    const customerName = inc["_customerid_value@OData.Community.Display.V1.FormattedValue"] || "-";
+    const contactName = inc["_primarycontactid_value@OData.Community.Display.V1.FormattedValue"] || "-";
+    const machineNumber = getFieldValue("con_maschinennummer") || "-";
 
-    const customerName = inc["_customerid_value@OData.Community.Display.V1.FormattedValue"];
-    if (customerName) appendReadOnlyField(container, "Kunde", customerName);
+    const wrapper = document.createElement("div");
+    wrapper.className = "ticket-header-card";
+
+    const top = document.createElement("div");
+    top.className = "ticket-header-top";
+
+    const badge = document.createElement("div");
+    badge.className = "ticket-badge";
+    badge.textContent = `Ticket ${ticketNumber}`;
+
+    top.appendChild(badge);
+
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "ticket-title-main";
+    titleDiv.textContent = String(title);
+
+    const meta = document.createElement("div");
+    meta.className = "ticket-meta-line";
+
+    appendTicketMetaItem(meta, "Kunde", customerName);
+    appendTicketMetaItem(meta, "Ansprechpartner", contactName);
+    appendTicketMetaItem(meta, "Maschine", machineNumber);
+
+    wrapper.append(top, titleDiv, meta);
+    container.appendChild(wrapper);
+}
+
+function appendTicketMetaItem(container, label, value) {
+    const item = document.createElement("span");
+    item.className = "ticket-meta-item";
+
+    const strong = document.createElement("strong");
+    strong.textContent = `${label}: `;
+
+    const text = document.createTextNode(String(value || "-"));
+
+    item.append(strong, text);
+    container.appendChild(item);
 }
 
 function appendReadOnlyField(container, label, value) {
