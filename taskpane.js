@@ -795,16 +795,25 @@ function evaluateActionButtonsLogic() {
         canForwardToSapOwner
     });
 }
+function normalizeComparableValue(value) {
+    // Textarea-Werte normalisieren Zeilenumbrueche im Browser oft von CRLF auf LF.
+    // Ohne diese Normalisierung wird ein unveraenderter Beschreibungstext faelschlich
+    // als geaendert erkannt und der Speicherbutton sofort angezeigt.
+    return String(value ?? "").replace(/\r\n/g, "\n");
+}
+
 function isTrackedInputChanged(input) {
     if (!input || input.dataset.trackChange !== "true") return false;
 
     const field = D365_CONFIG.requiredFields.find(f => f.logicalName === input.dataset.logicalName);
+
     if (field && field.type === "lookup") {
-        return String(input.dataset.lookupId || "") !== String(input.dataset.originalLookupId || "")
-            || String(input.value || "").trim() !== String(input.dataset.originalValue || "").trim();
+        const lookupIdChanged = String(input.dataset.lookupId || "") !== String(input.dataset.originalLookupId || "");
+        const displayChanged = normalizeComparableValue(input.value).trim() !== normalizeComparableValue(input.dataset.originalValue).trim();
+        return lookupIdChanged || displayChanged;
     }
 
-    return String(input.value || "") !== String(input.dataset.originalValue || "");
+    return normalizeComparableValue(input.value) !== normalizeComparableValue(input.dataset.originalValue);
 }
 
 function hasAnyInputChanges() {
