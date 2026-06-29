@@ -448,6 +448,8 @@ function setupEventHandlers() {
     document.getElementById("btn-sap-transfer").addEventListener("click", handleSapTransfer);
     document.getElementById("btn-sap-forward").addEventListener("click", handleSapForward);
     document.getElementById("btn-close-ticket").addEventListener("click", handleCloseTicket);
+    document.getElementById("btn-open-dynamics").addEventListener("click", handleOpenDynamics);
+    document.getElementById("btn-free").addEventListener("click", handleFreeButton);
 
     currentState.handlersInitialized = true;
 }
@@ -521,6 +523,34 @@ function handleSapForward() {
                    <p><strong>Ticket:</strong> ${escapeHtml(ticketNumber)}<br>
                    <strong>Titel:</strong> ${escapeHtml(title)}</p>`
     });
+}
+
+
+function getDynamicsRecordUrl() {
+    if (!currentState.incidentId) {
+        throw new Error("Kein Incident geladen. Dynamics kann nicht geöffnet werden.");
+    }
+
+    const baseUrl = D365_CONFIG.apiEndpoint
+        .replace(/\/api\/data\/v[0-9.]+\/?$/i, "")
+        .replace(/\/$/, "");
+
+    return `${baseUrl}/main.aspx?etn=incident&pagetype=entityrecord&id=${encodeURIComponent(currentState.incidentId)}`;
+}
+
+function handleOpenDynamics() {
+    hideStatus();
+
+    try {
+        const url = getDynamicsRecordUrl();
+        window.open(url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+        showStatus(err.message, "error");
+    }
+}
+
+function handleFreeButton() {
+    showStatus("Dieser Button ist noch nicht belegt.", "success");
 }
 
 async function handleCloseTicket() {
