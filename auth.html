@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Hedelius – Anmeldung</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js" type="text/javascript"></script>
     <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
     <style>
         body {
@@ -18,8 +19,8 @@
             color: #323130;
         }
         .logo { width: 180px; margin-bottom: 24px; }
-        .status { font-size: 14px; color: #605e5c; margin-top: 12px; }
-        .error { color: #a80000; background: #fde7e9; padding: 12px; border-radius: 4px; border-left: 4px solid #a80000; max-width: 400px; margin-top: 16px; }
+        .status { font-size: 14px; color: #605e5c; margin-top: 12px; text-align: center; max-width: 440px; }
+        .error { color: #a80000; background: #fde7e9; padding: 12px; border-radius: 4px; border-left: 4px solid #a80000; max-width: 440px; margin-top: 16px; }
         .loader { border: 3px solid #f3f2f1; border-top: 3px solid #0078d4; border-radius: 50%; width: 32px; height: 32px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -40,66 +41,101 @@
             cache: { cacheLocation: "localStorage", storeAuthStateInCookie: true }
         };
 
+        const loginRequest = {
+            scopes: ["https://hedelius.api.crm4.dynamics.com/user_impersonation"],
+            prompt: "select_account"
+        };
+
+        function isOfficeDialog() {
+            return !!(window.Office && Office.context && Office.context.ui && Office.context.ui.messageParent);
+        }
+
+        function sendMessageToTaskpane(payload) {
+            const json = JSON.stringify(payload);
+
+            if (isOfficeDialog()) {
+                Office.context.ui.messageParent(json);
+                return true;
+            }
+
+            return false;
+        }
+
+        function storeTokenLocally(result) {
+            localStorage.setItem("lfp_access_token", result.accessToken);
+            localStorage.setItem("lfp_token_expiry", result.expiresOn.getTime().toString());
+            localStorage.setItem("lfp_account", JSON.stringify(result.account || {}));
+        }
+
+        function finishSuccess(result) {
+            document.getElementById("status").innerText = "Anmeldung erfolgreich. Fenster wird geschlossen...";
+
+            const messageSent = sendMessageToTaskpane({
+                type: "auth_success",
+                accessToken: result.accessToken,
+                expiresOn: result.expiresOn.getTime(),
+                account: result.account || {}
+            });
+
+            // Fallback fuer direkten Aufruf ausserhalb der Office Dialog API.
+            if (!messageSent) {
+                storeTokenLocally(result);
+                setTimeout(() => { window.close(); }, 500);
+            }
+        }
+
         function showError(msg) {
             document.getElementById("loader").style.display = "none";
             document.getElementById("status").style.display = "none";
             document.getElementById("error-box").style.display = "block";
             document.getElementById("error-box").innerText = "Fehler: " + msg;
+
+            sendMessageToTaskpane({
+                type: "auth_error",
+                message: msg
+            });
         }
 
         async function run() {
             const msalInstance = new msal.PublicClientApplication(msalConfig);
 
             try {
-                // Schritt 1: Redirect-Ergebnis verarbeiten
                 const result = await msalInstance.handleRedirectPromise();
 
                 if (result && result.accessToken) {
-                    // ✅ Token erfolgreich erhalten – in localStorage speichern
-                    document.getElementById("status").innerText = "Anmeldung erfolgreich. Fenster wird geschlossen...";
-                    localStorage.setItem("lfp_access_token", result.accessToken);
-                    localStorage.setItem("lfp_token_expiry", result.expiresOn.getTime().toString());
-                    localStorage.setItem("lfp_account", JSON.stringify(result.account));
+                    finishSuccess(result);
+                    return;
+                }
 
-                    // Kurze Pause damit localStorage sicher geschrieben ist
-                    setTimeout(() => { window.close(); }, 500);
+                document.getElementById("status").innerText = "Weiterleitung zur Anmeldung...";
 
-                } else {
-                    // Schritt 2: Noch kein Token – Login starten
-                    document.getElementById("status").innerText = "Weiterleitung zur Anmeldung...";
+                const accounts = msalInstance.getAllAccounts();
 
-                    const accounts = msalInstance.getAllAccounts();
-                    const loginRequest = {
-                        scopes: ["https://hedelius.api.crm4.dynamics.com/user_impersonation"],
-                        prompt: "select_account"
-                    };
-
-                    if (accounts.length > 0) {
-                        // Account vorhanden – silent versuchen
-                        try {
-                            loginRequest.account = accounts[0];
-                            const silentResult = await msalInstance.acquireTokenSilent(loginRequest);
-                            localStorage.setItem("lfp_access_token", silentResult.accessToken);
-                            localStorage.setItem("lfp_token_expiry", silentResult.expiresOn.getTime().toString());
-                            localStorage.setItem("lfp_account", JSON.stringify(silentResult.account));
-                            document.getElementById("status").innerText = "Anmeldung erfolgreich. Fenster wird geschlossen...";
-                            setTimeout(() => { window.close(); }, 500);
-                        } catch(e) {
-                            // Silent fehlgeschlagen – Redirect
-                            await msalInstance.acquireTokenRedirect(loginRequest);
-                        }
-                    } else {
-                        // Kein Account – Redirect zu Microsoft Login
+                if (accounts.length > 0) {
+                    try {
+                        const silentResult = await msalInstance.acquireTokenSilent({
+                            ...loginRequest,
+                            account: accounts[0]
+                        });
+                        finishSuccess(silentResult);
+                        return;
+                    } catch (_) {
                         await msalInstance.acquireTokenRedirect(loginRequest);
+                        return;
                     }
                 }
 
+                await msalInstance.acquireTokenRedirect(loginRequest);
             } catch (error) {
-                showError(error.message);
+                showError(error.message || String(error));
             }
         }
 
-        run();
+        if (window.Office && Office.onReady) {
+            Office.onReady(() => run());
+        } else {
+            run();
+        }
     </script>
 </body>
 </html>

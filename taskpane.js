@@ -115,46 +115,95 @@ function showLoginButton() {
     btn.onclick = () => {
         hideStatus();
 
-        const authUrl = "https://henne49808.github.io/Service-outlook-addin/auth.html";
-        const loginWin = window.open(authUrl, "HedeliusLogin", "width=520,height=680,left=200,top=80");
+        const authUrl = "https://henne49808.github.io/Service-outlook-addin/auth.html?source=officeDialog";
 
-        if (!loginWin) {
-            showStatus("Popup blockiert. Bitte den Login-Link verwenden.", "error");
+        btn.disabled = true;
+        btn.innerText = "Anmeldung wird geöffnet...";
+
+        if (!Office.context.ui || !Office.context.ui.displayDialogAsync) {
+            showStatus("Office Dialog API ist in diesem Outlook-Client nicht verfügbar.", "error");
+            btn.disabled = false;
+            btn.innerText = "Bei Hedelius anmelden";
             document.getElementById("login-link-container").classList.remove("hidden");
             return;
         }
 
-        btn.disabled = true;
-        btn.innerText = "Warte auf Anmeldung...";
+        Office.context.ui.displayDialogAsync(
+            authUrl,
+            { height: 70, width: 40, displayInIframe: false },
+            (asyncResult) => {
+                if (asyncResult.status !== Office.AsyncResultStatus.Succeeded) {
+                    const message = asyncResult.error && asyncResult.error.message
+                        ? asyncResult.error.message
+                        : "Unbekannter Fehler beim Öffnen des Anmeldedialogs.";
 
-        const checkInterval = setInterval(async () => {
-            const token = getStoredToken();
-
-            if (token) {
-                clearInterval(checkInterval);
-                document.getElementById("login-container").classList.add("hidden");
-                toggleLoading(true);
-
-                try {
-                    await loadAndRender();
-                } catch (err) {
-                    showStatus(err.message, "error");
-                } finally {
-                    toggleLoading(false);
+                    showStatus("Anmeldedialog konnte nicht geöffnet werden: " + message, "error");
+                    btn.disabled = false;
+                    btn.innerText = "Bei Hedelius anmelden";
+                    document.getElementById("login-link-container").classList.remove("hidden");
+                    return;
                 }
-                return;
-            }
 
-            if (loginWin.closed) {
-                clearInterval(checkInterval);
-                btn.disabled = false;
-                btn.innerText = "Bei Hedelius anmelden";
-                showStatus("Anmeldung nicht abgeschlossen. Bitte erneut versuchen.", "error");
+                const dialog = asyncResult.value;
+                btn.innerText = "Warte auf Anmeldung...";
+
+                dialog.addEventHandler(Office.EventType.DialogMessageReceived, async (arg) => {
+                    let data;
+
+                    try {
+                        data = JSON.parse(arg.message);
+                    } catch (_) {
+                        dialog.close();
+                        btn.disabled = false;
+                        btn.innerText = "Bei Hedelius anmelden";
+                        showStatus("Ungueltige Antwort vom Anmeldedialog.", "error");
+                        return;
+                    }
+
+                    if (data.type === "auth_success") {
+                        localStorage.setItem("lfp_access_token", data.accessToken);
+                        localStorage.setItem("lfp_token_expiry", String(data.expiresOn));
+                        localStorage.setItem("lfp_account", JSON.stringify(data.account || {}));
+
+                        dialog.close();
+                        document.getElementById("login-container").classList.add("hidden");
+                        toggleLoading(true);
+
+                        try {
+                            await loadAndRender();
+                        } catch (err) {
+                            showStatus(err.message, "error");
+                        } finally {
+                            toggleLoading(false);
+                            btn.disabled = false;
+                            btn.innerText = "Bei Hedelius anmelden";
+                        }
+                        return;
+                    }
+
+                    if (data.type === "auth_error") {
+                        dialog.close();
+                        btn.disabled = false;
+                        btn.innerText = "Bei Hedelius anmelden";
+                        showStatus("Anmeldung fehlgeschlagen: " + (data.message || "Unbekannter Fehler."), "error");
+                    }
+                });
+
+                dialog.addEventHandler(Office.EventType.DialogEventReceived, (arg) => {
+                    // 12006 wird u. a. beim normalen Schliessen des Dialogs ausgelöst.
+                    // Wenn kein Token angekommen ist, muss der Benutzer erneut starten können.
+                    if (!getStoredToken()) {
+                        btn.disabled = false;
+                        btn.innerText = "Bei Hedelius anmelden";
+                        if (arg && arg.error !== 12006) {
+                            showStatus("Anmeldung nicht abgeschlossen. Bitte erneut versuchen.", "error");
+                        }
+                    }
+                });
             }
-        }, 800);
+        );
     };
 }
-
 async function getDynamicsAccessToken() {
     const token = getStoredToken();
     if (token) return token;
@@ -376,8 +425,7 @@ function evaluateActionButtonsLogic() {
         Number(syncStatusRaw) === 281370001 &&
         !hasSapId;
 
-    const canForwardToSapOwner =
-        hasSapId;
+    const canForwardToSapOwner = hasSapId;
 
     document.getElementById("btn-sap-transfer")
         .classList.toggle("hidden", !canTransferToSap);
@@ -393,7 +441,6 @@ function evaluateActionButtonsLogic() {
         canForwardToSapOwner
     });
 }
-
 function setupEventHandlers() {
     if (currentState.handlersInitialized) return;
 
