@@ -916,6 +916,27 @@ function hasAnyInputChanges() {
     return !snapshotsEqual(currentState.formBaseline, getTrackedFormSnapshot());
 }
 
+function isTrackedInputChanged(input) {
+    if (!input || !currentState.formBaseline) return false;
+
+    const key = input.dataset.logicalName || input.id;
+    const field = D365_CONFIG.requiredFields.find(f => f.logicalName === key);
+    const baseline = currentState.formBaseline[key];
+
+    if (!baseline) return false;
+
+    const current = field && field.type === "lookup"
+        ? {
+            value: normalizeComparableValue(input.value).trim(),
+            lookupId: String(input.dataset.lookupId || "")
+        }
+        : {
+            value: normalizeComparableValue(input.value)
+        };
+
+    return !snapshotsEqual({ [key]: baseline }, { [key]: current });
+}
+
 function setElementVisible(elementOrId, isVisible) {
     const el = typeof elementOrId === "string" ? document.getElementById(elementOrId) : elementOrId;
     if (!el) return;
