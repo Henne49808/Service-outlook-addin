@@ -363,18 +363,35 @@ function getFieldValue(logicalName) {
 
 function evaluateActionButtonsLogic() {
     const inc = currentState.incidentData || {};
+
     const syncStatusRaw = inc.hed_sapsyncstatus;
-    const syncStatusFormatted = getFieldValue("hed_sapsyncstatus");
-    const sapOwner = inc.con_sapbesitzer;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const sapId = inc.con_sapid;
 
-    const isSapTransferReady =
-        String(syncStatusFormatted || "").toLowerCase() === D365_CONFIG.sapTransferReadyFormattedText.toLowerCase();
+    const hasSapId =
+        sapId !== undefined &&
+        sapId !== null &&
+        String(sapId).trim() !== "";
 
-    document.getElementById("btn-sap-transfer").classList.toggle("hidden", !isSapTransferReady);
-    document.getElementById("btn-sap-forward").classList.toggle("hidden", !(sapOwner && emailRegex.test(sapOwner.trim())));
+    const canTransferToSap =
+        Number(syncStatusRaw) === 281370001 &&
+        !hasSapId;
 
-    console.log("SAP-Status:", { syncStatusRaw, syncStatusFormatted, sapOwner });
+    const canForwardToSapOwner =
+        hasSapId;
+
+    document.getElementById("btn-sap-transfer")
+        .classList.toggle("hidden", !canTransferToSap);
+
+    document.getElementById("btn-sap-forward")
+        .classList.toggle("hidden", !canForwardToSapOwner);
+
+    console.log("SAP-Button-Logik:", {
+        hed_sapsyncstatus: syncStatusRaw,
+        con_sapid: sapId,
+        hasSapId,
+        canTransferToSap,
+        canForwardToSapOwner
+    });
 }
 
 function setupEventHandlers() {
