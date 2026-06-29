@@ -977,6 +977,54 @@ async function saveMissingFields() {
     }
 }
 
+
+function isTrackedInputChanged(el) {
+    if (!el) return false;
+
+    const key = el.dataset.logicalName || el.id;
+    const field = D365_CONFIG.requiredFields.find(f => f.logicalName === key);
+    const currentValue = normalizeComparableValue(el.value);
+
+    if (field && field.type === "lookup") {
+        const currentLookupId = String(el.dataset.lookupId || "").trim().toLowerCase();
+        const baselineEntry = currentState.formBaseline && currentState.formBaseline[key]
+            ? currentState.formBaseline[key]
+            : null;
+
+        if (baselineEntry) {
+            const baselineLookupId = String(baselineEntry.lookupId || "").trim().toLowerCase();
+            const baselineValue = normalizeComparableValue(baselineEntry.value).trim();
+
+            if (currentLookupId || baselineLookupId) {
+                return currentLookupId !== baselineLookupId;
+            }
+
+            return currentValue.trim() !== baselineValue;
+        }
+
+        const originalLookupId = String(el.dataset.originalLookupId || "").trim().toLowerCase();
+        if (currentLookupId || originalLookupId) {
+            return currentLookupId !== originalLookupId;
+        }
+    }
+
+    const baselineEntry = currentState.formBaseline && currentState.formBaseline[key]
+        ? currentState.formBaseline[key]
+        : null;
+
+    if (baselineEntry) {
+        return currentValue !== normalizeComparableValue(baselineEntry.value);
+    }
+
+    const originalValue = normalizeComparableValue(
+        el.dataset.originalValue ??
+        el.getAttribute("data-original-value") ??
+        ""
+    );
+
+    return currentValue !== originalValue;
+}
+
 async function buildMissingFieldsPayload() {
     const payload = {};
 
