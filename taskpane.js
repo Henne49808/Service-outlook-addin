@@ -384,15 +384,30 @@ function hasRequiredFieldValue(logicalName) {
 function renderCompleteTicketInformation(container) {
     if (!container) return;
 
-    const rows = [
-        ["Kunde", getLookupDisplayValue("_customerid_value")],
-        ["Ansprechpartner", getLookupDisplayValue("_primarycontactid_value")],
-        ["Maschinennummer", getFieldValue("con_maschinennummer")],
-        ["Priorität", getFieldValue("prioritycode")],
-        ["Beschreibung", getFieldValue("description")]
-    ];
+    // Block 2B zeigt nur die Ticketinformationen, die der Anwender bearbeiten darf.
+    // Beschreibung wird bewusst nicht angezeigt, da es dafür einen eigenen Block gibt.
+    const editableFields = D365_CONFIG.requiredFields.filter(field => field.logicalName !== "description");
 
-    rows.forEach(([label, value]) => appendReadOnlyRow(container, label, value || "-"));
+    editableFields.forEach(field => {
+        const currentValue = getEditableFieldInitialValue(field);
+        appendInputField(container, field, currentValue, currentValue, false);
+    });
+}
+
+function getEditableFieldInitialValue(field) {
+    const inc = currentState.incidentData || {};
+
+    if (field.type === "lookup") {
+        return inc[`${field.logicalName}@OData.Community.Display.V1.FormattedValue`] || "";
+    }
+
+    if (field.type === "choice") {
+        const rawValue = inc[field.logicalName];
+        return rawValue === undefined || rawValue === null ? "" : String(rawValue);
+    }
+
+    const value = inc[field.logicalName];
+    return value === undefined || value === null ? "" : String(value);
 }
 
 function appendReadOnlyRow(container, label, value) {
@@ -550,7 +565,7 @@ function appendReadOnlyField(container, label, value) {
     container.appendChild(div);
 }
 
-function appendInputField(container, field) {
+function appendInputField(container, field, initialValue = "", originalValue = "", showRequiredMarker = true) {
     const div = document.createElement("div");
     div.className = "field-group";
 
@@ -559,10 +574,12 @@ function appendInputField(container, field) {
     label.setAttribute("for", `input-${field.logicalName}`);
     label.textContent = field.label;
 
-    const marker = document.createElement("span");
-    marker.className = "required-marker";
-    marker.textContent = "*";
-    label.appendChild(marker);
+    if (showRequiredMarker) {
+        const marker = document.createElement("span");
+        marker.className = "required-marker";
+        marker.textContent = "*";
+        label.appendChild(marker);
+    }
 
     let input;
 
@@ -587,6 +604,8 @@ function appendInputField(container, field) {
 
     input.id = `input-${field.logicalName}`;
     input.dataset.logicalName = field.logicalName;
+    input.dataset.originalValue = String(originalValue ?? "");
+    input.value = String(initialValue ?? "");
 
     div.append(label, input);
     container.appendChild(div);
@@ -633,6 +652,7 @@ function setupEventHandlers() {
     if (currentState.handlersInitialized) return;
 
     document.getElementById("btn-save-missing").addEventListener("click", saveMissingFields);
+    document.getElementById("btn-save-complete").addEventListener("click", saveMissingFields);
     document.getElementById("btn-sap-transfer").addEventListener("click", handleSapTransfer);
     document.getElementById("btn-sap-forward").addEventListener("click", handleSapForward);
     document.getElementById("btn-close-ticket").addEventListener("click", handleCloseTicket);
@@ -674,6 +694,10 @@ async function buildMissingFieldsPayload() {
         if (!el) continue;
 
         const value = String(el.value || "").trim();
+        const originalValue = String(el.dataset.originalValue ?? "").trim();
+
+        // In Block 2B sind Felder vorbefüllt. Unveränderte Werte werden nicht erneut gespeichert.
+        if (value === originalValue) continue;
         if (!value) continue;
 
         if (field.type === "lookup") {
