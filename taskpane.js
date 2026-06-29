@@ -311,7 +311,7 @@ async function fetchDynamicsData(messageId) {
     }
 
     const incidentUrl = buildDataverseUrl(`incidents(${regardingId})`, {
-        "$select": "incidentid,ticketnumber,title,con_maschinennummer,description,prioritycode,con_sapid,con_sapbesitzer,hed_sapsyncstatus,_customerid_value,_primarycontactid_value,statecode,statuscode"
+        "$select": "incidentid,ticketnumber,title,con_maschinennummer,description,prioritycode,con_sapid,con_sapbesitzer,hed_sapsyncstatus,_customerid_value,_primarycontactid_value,statecode,statuscode,createdon,modifiedon"
     });
 
     const incident = await fetchJsonOrThrow(incidentUrl, { method: "GET", headers }, "Dynamics-Incident-Abfrage");
@@ -442,48 +442,96 @@ function renderTicketHeader(container) {
 
     const ticketNumber = getFieldValue("ticketnumber") || "-";
     const title = getFieldValue("title") || "-";
-    const customerName = inc["_customerid_value@OData.Community.Display.V1.FormattedValue"] || "-";
-    const contactName = inc["_primarycontactid_value@OData.Community.Display.V1.FormattedValue"] || "-";
     const machineNumber = getFieldValue("con_maschinennummer") || "-";
+    const priority = getFieldValue("prioritycode") || "-";
+    const status = getFieldValue("statuscode") || getFieldValue("statecode") || "-";
+    const createdOn = formatDateTimeValue(inc.createdon);
+    const modifiedOn = formatDateTimeValue(inc.modifiedon);
 
     const wrapper = document.createElement("div");
     wrapper.className = "ticket-header-card";
 
-    const top = document.createElement("div");
-    top.className = "ticket-header-top";
+    const left = document.createElement("div");
+    left.className = "ticket-header-left";
 
-    const badge = document.createElement("div");
-    badge.className = "ticket-badge";
-    badge.textContent = `Ticket ${ticketNumber}`;
+    const icon = document.createElement("div");
+    icon.className = "ticket-header-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = "📄";
 
-    top.appendChild(badge);
+    const main = document.createElement("div");
+    main.className = "ticket-header-main";
 
-    const titleDiv = document.createElement("div");
-    titleDiv.className = "ticket-title-main";
-    titleDiv.textContent = String(title);
+    const titleMain = document.createElement("div");
+    titleMain.className = "ticket-title-main";
+    titleMain.textContent = `Ticket ${ticketNumber}`;
 
-    const meta = document.createElement("div");
-    meta.className = "ticket-meta-line";
+    const subtitle = document.createElement("div");
+    subtitle.className = "ticket-subtitle";
+    subtitle.textContent = String(title || machineNumber || "-");
 
-    appendTicketMetaItem(meta, "Kunde", customerName);
-    appendTicketMetaItem(meta, "Ansprechpartner", contactName);
-    appendTicketMetaItem(meta, "Maschine", machineNumber);
+    const statusBadge = document.createElement("div");
+    statusBadge.className = "ticket-status-badge";
 
-    wrapper.append(top, titleDiv, meta);
+    const dot = document.createElement("span");
+    dot.className = "ticket-status-dot";
+
+    const statusText = document.createElement("span");
+    statusText.textContent = String(status);
+
+    statusBadge.append(dot, statusText);
+    main.append(titleMain, subtitle, statusBadge);
+    left.append(icon, main);
+
+    const right = document.createElement("div");
+    right.className = "ticket-header-right";
+
+    appendTicketSideItem(right, "Priorität", priority, true);
+    appendTicketSideItem(right, "Erstellt am", createdOn || "-");
+    appendTicketSideItem(right, "Letzte Änderung", modifiedOn || "-");
+
+    wrapper.append(left, right);
     container.appendChild(wrapper);
 }
 
-function appendTicketMetaItem(container, label, value) {
-    const item = document.createElement("span");
-    item.className = "ticket-meta-item";
+function appendTicketSideItem(container, label, value, isPriority = false) {
+    const item = document.createElement("div");
 
-    const strong = document.createElement("strong");
-    strong.textContent = `${label}: `;
+    const labelDiv = document.createElement("div");
+    labelDiv.className = "ticket-side-label";
+    labelDiv.textContent = label;
 
-    const text = document.createTextNode(String(value || "-"));
+    const valueDiv = document.createElement("div");
+    valueDiv.className = "ticket-side-value";
 
-    item.append(strong, text);
+    if (isPriority) {
+        const badge = document.createElement("span");
+        badge.className = "ticket-priority-badge";
+        badge.textContent = String(value || "-");
+        valueDiv.appendChild(badge);
+    } else {
+        valueDiv.textContent = String(value || "-");
+    }
+
+    item.append(labelDiv, valueDiv);
     container.appendChild(item);
+}
+
+function formatDateTimeValue(value) {
+    if (!value) return "";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return String(value);
+    }
+
+    return date.toLocaleString("de-DE", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
 }
 
 function appendReadOnlyField(container, label, value) {
