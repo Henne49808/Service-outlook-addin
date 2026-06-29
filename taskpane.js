@@ -253,6 +253,14 @@ function escapeODataString(value) {
     return String(value).replace(/'/g, "''");
 }
 
+function debounce(fn, delay = 300) {
+    let timerId;
+    return (...args) => {
+        window.clearTimeout(timerId);
+        timerId = window.setTimeout(() => fn(...args), delay);
+    };
+}
+
 async function readDataverseError(response) {
     const raw = await response.text();
     if (!raw) return response.statusText || "Kein Fehlertext von Dataverse erhalten.";
@@ -357,7 +365,8 @@ function renderUI() {
 
     document.getElementById("section-missing").classList.toggle("hidden", !hasMissing);
     document.getElementById("section-complete").classList.toggle("hidden", hasMissing);
-    document.getElementById("btn-save-missing").classList.toggle("hidden", !hasMissing);
+    document.getElementById("btn-save-missing").classList.add("hidden");
+    document.getElementById("btn-save-complete").classList.add("hidden");
 
     if (hasMissing) {
         missingFields.forEach(field => appendInputField(missingForm, field));
@@ -367,6 +376,7 @@ function renderUI() {
 
     renderDescriptionSection();
     evaluateActionButtonsLogic();
+    updateSaveButtonVisibility();
 }
 
 function getMissingRequiredFields() {
@@ -436,20 +446,21 @@ function renderDescriptionSection() {
     const el = document.getElementById("incident-description");
     if (!el) return;
 
-    el.textContent = "";
+    el.replaceChildren();
 
-    if (!description) {
-        const empty = document.createElement("em");
-        empty.textContent = "Keine Beschreibung vorhanden.";
-        el.appendChild(empty);
-        return;
-    }
+    const textarea = document.createElement("textarea");
+    textarea.id = "input-description-section";
+    textarea.dataset.logicalName = "description";
+    textarea.dataset.originalValue = String(description ?? "");
+    textarea.dataset.trackChange = "true";
+    textarea.rows = 6;
+    textarea.className = "description-edit";
+    textarea.placeholder = "Beschreibung erfassen...";
+    textarea.value = String(description ?? "");
+    textarea.addEventListener("input", updateSaveButtonVisibility);
+    textarea.addEventListener("change", updateSaveButtonVisibility);
 
-    const lines = String(description).split(/\r?\n/);
-    lines.forEach((line, index) => {
-        if (index > 0) el.appendChild(document.createElement("br"));
-        el.appendChild(document.createTextNode(line));
-    });
+    el.appendChild(textarea);
 }
 
 function renderTicketHeader(container) {
@@ -598,18 +609,154 @@ function appendInputField(container, field, initialValue = "", originalValue = "
         input = document.createElement("input");
         input.type = "text";
         if (field.type === "lookup") {
-            input.placeholder = `${field.label} suchen/eingeben...`;
+            input.placeholder = `${field.label} suchen...`;
+            input.autocomplete = "off";
+            div.classList.add("lookup-field-group");
         }
     }
 
     input.id = `input-${field.logicalName}`;
     input.dataset.logicalName = field.logicalName;
     input.dataset.originalValue = String(originalValue ?? "");
+    input.dataset.trackChange = "true";
     input.value = String(initialValue ?? "");
+    input.addEventListener("input", updateSaveButtonVisibility);
+    input.addEventListener("change", updateSaveButtonVisibility);
+
+    if (field.type === "lookup") {
+        const currentId = currentState.incidentData?.[field.logicalName] || "";
+        input.dataset.lookupId = currentId;
+        input.dataset.originalLookupId = currentId;
+        input.dataset.lookupDisplay = String(initialValue ?? "");
+
+        const dropdown = document.createElement("div");
+        dropdown.className = "lookup-dropdown hidden";
+        dropdown.id = `lookup-${field.logicalName}`;
+
+        const clearButton = document.createElement("button");
+        clearButton.type = "button";
+        clearButton.className = "lookup-clear hidden";
+        clearButton.textContent = "Auswahl entfernen";
+        clearButton.addEventListener("click", () => {
+            input.value = "";
+            input.dataset.lookupId = "";
+            input.dataset.lookupDisplay = "";
+            dropdown.classList.add("hidden");
+            clearButton.classList.add("hidden");
+            updateSaveButtonVisibility();
+        });
+
+        if (currentId) {
+            clearButton.classList.remove("hidden");
+        }
+
+        input.addEventListener("input", debounce(() => searchLookupSuggestions(field, input, dropdown, clearButton), 300));
+        input.addEventListener("focus", () => {
+            if (input.value.trim().length >= 2) {
+                searchLookupSuggestions(field, input, dropdown, clearButton);
+            }
+        });
+        input.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+                dropdown.classList.add("hidden");
+            }
+        });
+        input.addEventListener("blur", () => {
+            window.setTimeout(() => dropdown.classList.add("hidden"), 200);
+        });
+
+        div.append(label, input, dropdown, clearButton);
+        container.appendChild(div);
+        return;
+    }
 
     div.append(label, input);
     container.appendChild(div);
 }
+
+async function searchLookupSuggestions(field, input, dropdown, clearButton) {
+    const searchText = String(input.value || "").trim();
+    input.dataset.lookupId = "";
+    input.dataset.lookupDisplay = "";
+    clearButton.classList.add("hidden");
+
+    if (searchText.length < 2) {
+        dropdown.classList.add("hidden");
+        dropdown.replaceChildren();
+        return;
+    }
+
+    dropdown.classList.remove("hidden");
+    dropdown.textContent = "Suche...";
+
+    try {
+        const matches = await fetchLookupSuggestions(field, searchText);
+        renderLookupSuggestions(field, input, dropdown, clearButton, matches);
+    } catch (err) {
+        dropdown.textContent = err.message;
+    }
+}
+
+async function fetchLookupSuggestions(field, searchText) {
+    const token = await getDynamicsAccessToken();
+    const headers = getDataverseHeaders(token);
+    const safeText = escapeODataString(searchText);
+
+    const url = buildDataverseUrl(field.searchEntitySet, {
+        "$select": field.searchSelect,
+        "$filter": `contains(${field.searchFilterField},'${safeText}')`,
+        "$orderby": field.searchFilterField,
+        "$top": "8"
+    });
+
+    const result = await fetchJsonOrThrow(url, { method: "GET", headers }, `${field.label}-Suche`);
+    return result.value || [];
+}
+
+function renderLookupSuggestions(field, input, dropdown, clearButton, matches) {
+    dropdown.replaceChildren();
+
+    if (!matches.length) {
+        const empty = document.createElement("div");
+        empty.className = "lookup-empty";
+        empty.textContent = "Keine Treffer gefunden.";
+        dropdown.appendChild(empty);
+        return;
+    }
+
+    matches.forEach(match => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "lookup-result";
+
+        const main = document.createElement("span");
+        main.className = "lookup-result-main";
+        main.textContent = match[field.displayField] || "(ohne Namen)";
+        item.appendChild(main);
+
+        if (field.logicalName === "_primarycontactid_value" && match.emailaddress1) {
+            const sub = document.createElement("span");
+            sub.className = "lookup-result-sub";
+            sub.textContent = match.emailaddress1;
+            item.appendChild(sub);
+        }
+
+        item.addEventListener("mousedown", event => {
+            event.preventDefault();
+            const id = match[field.idField];
+            const display = match[field.displayField] || "";
+            input.value = display;
+            input.dataset.lookupId = id;
+            input.dataset.lookupDisplay = display;
+            dropdown.classList.add("hidden");
+            clearButton.classList.remove("hidden");
+            updateSaveButtonVisibility();
+        });
+
+        dropdown.appendChild(item);
+    });
+}
+
 
 function getFieldValue(logicalName) {
     const inc = currentState.incidentData || {};
@@ -648,6 +795,36 @@ function evaluateActionButtonsLogic() {
         canForwardToSapOwner
     });
 }
+function isTrackedInputChanged(input) {
+    if (!input || input.dataset.trackChange !== "true") return false;
+
+    const field = D365_CONFIG.requiredFields.find(f => f.logicalName === input.dataset.logicalName);
+    if (field && field.type === "lookup") {
+        return String(input.dataset.lookupId || "") !== String(input.dataset.originalLookupId || "")
+            || String(input.value || "").trim() !== String(input.dataset.originalValue || "").trim();
+    }
+
+    return String(input.value || "") !== String(input.dataset.originalValue || "");
+}
+
+function hasAnyInputChanges() {
+    return Array.from(document.querySelectorAll('[data-track-change="true"]')).some(isTrackedInputChanged);
+}
+
+function updateSaveButtonVisibility() {
+    const hasChanges = hasAnyInputChanges();
+    const saveMissing = document.getElementById("btn-save-missing");
+    const saveComplete = document.getElementById("btn-save-complete");
+
+    if (saveMissing && !document.getElementById("section-missing").classList.contains("hidden")) {
+        saveMissing.classList.toggle("hidden", !hasChanges);
+    }
+
+    if (saveComplete && !document.getElementById("section-complete").classList.contains("hidden")) {
+        saveComplete.classList.toggle("hidden", !hasChanges);
+    }
+}
+
 function setupEventHandlers() {
     if (currentState.handlersInitialized) return;
 
@@ -690,27 +867,34 @@ async function buildMissingFieldsPayload() {
     const payload = {};
 
     for (const field of D365_CONFIG.requiredFields) {
-        const el = document.getElementById(`input-${field.logicalName}`);
-        if (!el) continue;
+        const candidates = [
+            document.getElementById(`input-${field.logicalName}`),
+            document.getElementById(`input-${field.logicalName}-section`)
+        ].filter(Boolean);
 
-        const value = String(el.value || "").trim();
-        const originalValue = String(el.dataset.originalValue ?? "").trim();
+        for (const el of candidates) {
+            if (!isTrackedInputChanged(el)) continue;
 
-        // In Block 2B sind Felder vorbefüllt. Unveränderte Werte werden nicht erneut gespeichert.
-        if (value === originalValue) continue;
-        if (!value) continue;
+            const value = String(el.value || "").trim();
 
-        if (field.type === "lookup") {
-            const lookupId = await resolveLookupValue(field, value);
-            payload[`${field.patchName}@odata.bind`] = `/${field.bindEntitySet}(${lookupId})`;
-        } else if (field.type === "choice") {
-            const numericValue = Number(value);
-            if (!Number.isFinite(numericValue)) {
-                throw new Error(`Ungueltiger Wert fuer ${field.label}.`);
+            if (field.type === "lookup") {
+                const lookupId = String(el.dataset.lookupId || "").trim();
+
+                if (!lookupId) {
+                    throw new Error(`${field.label}: Bitte einen Eintrag aus der Trefferliste auswählen.`);
+                }
+
+                payload[`${field.patchName}@odata.bind`] = `/${field.bindEntitySet}(${lookupId})`;
+            } else if (field.type === "choice") {
+                if (!value) continue;
+                const numericValue = Number(value);
+                if (!Number.isFinite(numericValue)) {
+                    throw new Error(`Ungueltiger Wert fuer ${field.label}.`);
+                }
+                payload[field.logicalName] = numericValue;
+            } else {
+                payload[field.logicalName] = value;
             }
-            payload[field.logicalName] = numericValue;
-        } else {
-            payload[field.logicalName] = value;
         }
     }
 

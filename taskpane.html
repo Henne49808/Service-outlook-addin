@@ -54,7 +54,8 @@
         .readonly-value { font-size: 13px; color: #323130; word-break: break-word; }
         .required-marker { color: #a80000; margin-left: 3px; }
         select { width: 100%; padding: 6px 8px; border: 1px solid #a19f9d; border-radius: 2px; box-sizing: border-box; font-family: inherit; margin-top: 4px; background: #fff; }
-        .description-box { margin-top: 8px; padding: 10px; border: 1px solid #d0d0d0; border-radius: 2px; background: #fafafa; min-height: 80px; max-height: 250px; overflow-y: auto; line-height: 1.45; white-space: normal; word-break: break-word; }
+        .description-box { margin-top: 8px; }
+        .description-edit { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #d0d0d0; border-radius: 2px; background: #fafafa; min-height: 120px; max-height: 280px; overflow-y: auto; line-height: 1.45; resize: vertical; font-family: inherit; }
         .ticket-header-card {
             display: grid;
             grid-template-columns: minmax(0, 1fr) 135px;
@@ -140,6 +141,44 @@
             border-radius: 6px;
             font-weight: 600;
         }
+
+        .lookup-field-group { position: relative; }
+        .lookup-dropdown {
+            position: absolute;
+            z-index: 1000;
+            left: 0;
+            right: 0;
+            margin-top: 2px;
+            background: #ffffff;
+            border: 1px solid #605e5c;
+            border-radius: 2px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        .lookup-result {
+            display: block;
+            width: 100%;
+            padding: 7px 9px;
+            border: 0;
+            background: #ffffff;
+            text-align: left;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .lookup-result:hover { background: #f3f2f1; }
+        .lookup-result-main { display: block; color: #201f1e; font-size: 13px; }
+        .lookup-result-sub { display: block; color: #605e5c; font-size: 12px; margin-top: 2px; }
+        .lookup-empty { padding: 8px 9px; color: #605e5c; font-size: 12px; }
+        .lookup-clear {
+            margin-top: 4px;
+            border: 0;
+            background: transparent;
+            color: #0078d4;
+            padding: 0;
+            font-size: 12px;
+            cursor: pointer;
+        }
         @media (max-width: 360px) {
             .ticket-header-card { grid-template-columns: 1fr; }
             .ticket-header-right { border-left: 0; border-top: 1px solid #edebe9; padding-left: 0; padding-top: 12px; }
@@ -180,13 +219,13 @@
             <div id="section-missing" class="section hidden">
                 <h2>Fehlende Werte</h2>
                 <div id="missing-fields-form"></div>
-                <button id="btn-save-missing" class="btn btn-secondary" style="margin-top:10px;">Eingaben speichern</button>
+                <button id="btn-save-missing" class="btn btn-secondary hidden" style="margin-top:10px;">Eingaben speichern</button>
             </div>
 
             <div id="section-complete" class="section hidden">
                 <h2>Ticketinformationen</h2>
                 <div id="complete-fields-container"></div>
-                <button id="btn-save-complete" class="btn btn-secondary" style="margin-top:10px;">Änderungen speichern</button>
+                <button id="btn-save-complete" class="btn btn-secondary hidden" style="margin-top:10px;">Änderungen speichern</button>
             </div>
 
             <div id="section-description" class="section">
@@ -207,6 +246,6 @@
         </div>
     </div>
 
-    <script src="taskpane.js?v=20260629-editable-ticketinfo"></script>
+    <script src="taskpane.js?v=20260629-lookup-fields"></script>
 </body>
 </html>
