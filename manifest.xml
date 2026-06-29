@@ -3,7 +3,7 @@
 <Version>2.0.4.0</Version>
 <ProviderName>Hedelius</ProviderName>
 <DefaultLocale>de-DE</DefaultLocale>
-<DisplayName DefaultValue="Hedelius-Outlook-Add-In"/>
+<DisplayName DefaultValue="Hedelius-Service-Add-In"/>
 <Description DefaultValue="Dynamics 365 Ticket-Integration für Hedelius Maschinenfabrik"/>
 <Hosts>
   <Host Name="Mailbox"/>
