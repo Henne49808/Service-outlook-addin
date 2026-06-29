@@ -11,11 +11,8 @@ const D365_CONFIG = {
         { logicalName: "_customerid_value", patchName: "customerid_account", entitySet: "accounts", label: "Kunde", type: "lookup", searchEntitySet: "accounts", searchSelect: "accountid,name", searchFilterField: "name", bindEntitySet: "accounts", idField: "accountid", displayField: "name" },
         { logicalName: "_primarycontactid_value", patchName: "primarycontactid", entitySet: "contacts", label: "Ansprechpartner", type: "lookup", searchEntitySet: "contacts", searchSelect: "contactid,fullname,emailaddress1", searchFilterField: "fullname", bindEntitySet: "contacts", idField: "contactid", displayField: "fullname" },
         { logicalName: "con_maschinennummer", label: "Maschinennummer", type: "text" },
-        { logicalName: "prioritycode", label: "Priorität", type: "choice", options: [
-            { value: "", label: "Bitte auswählen..." },
-            { value: 1, label: "Hoch" },
-            { value: 2, label: "Normal" },
-            { value: 3, label: "Niedrig" }
+        { logicalName: "prioritycode", label: "Priorität", type: "choice", entityLogicalName: "incident", optionsLoaded: false, options: [
+            { value: "", label: "Bitte auswählen..." }
         ] },
         { logicalName: "description", label: "Beschreibung", type: "textarea" }
     ],
@@ -79,6 +76,7 @@ async function initAddIn() {
 
 async function loadAndRender() {
     await fetchDynamicsData(currentState.internetMessageId);
+    await ensureChoiceOptionsLoaded();
     renderUI();
     setupEventHandlers();
     document.getElementById("app-container").classList.remove("hidden");
@@ -327,6 +325,51 @@ async function fetchDynamicsData(messageId) {
 
     currentState.incidentId = incident.incidentid;
     currentState.incidentData = incident;
+}
+
+async function ensureChoiceOptionsLoaded() {
+    const choiceFields = D365_CONFIG.requiredFields.filter(field => field.type === "choice" && !field.optionsLoaded);
+    if (!choiceFields.length) return;
+
+    const token = await getDynamicsAccessToken();
+    const headers = getDataverseHeaders(token);
+
+    for (const field of choiceFields) {
+        try {
+            const entityName = field.entityLogicalName || "incident";
+            const url = `${D365_CONFIG.apiEndpoint}/EntityDefinitions(LogicalName='${entityName}')/Attributes(LogicalName='${field.logicalName}')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?$select=LogicalName&$expand=OptionSet`;
+            const metadata = await fetchJsonOrThrow(url, { method: "GET", headers }, `${field.label}-Optionswerte`);
+            const options = metadata?.OptionSet?.Options || [];
+
+            const mapped = options
+                .filter(opt => opt.Value !== undefined && opt.Value !== null)
+                .map(opt => ({
+                    value: String(opt.Value),
+                    label: opt.Label?.UserLocalizedLabel?.Label
+                        || opt.Label?.LocalizedLabels?.[0]?.Label
+                        || String(opt.Value)
+                }));
+
+            if (mapped.length) {
+                field.options = [
+                    { value: "", label: "Bitte auswählen..." },
+                    ...mapped
+                ];
+                field.optionsLoaded = true;
+            }
+        } catch (err) {
+            console.warn(`Optionswerte fuer ${field.logicalName} konnten nicht geladen werden. Fallback bleibt aktiv.`, err);
+            // Fallback fuer Standard-Incident-Prioritaeten in Dataverse.
+            if (field.logicalName === "prioritycode" && field.options.length <= 1) {
+                field.options = [
+                    { value: "", label: "Bitte auswählen..." },
+                    { value: "1", label: "Hoch" },
+                    { value: "2", label: "Normal" },
+                    { value: "3", label: "Niedrig" }
+                ];
+            }
+        }
+    }
 }
 
 async function updateIncidentEntity(payload) {
@@ -625,6 +668,15 @@ function appendInputField(container, field, initialValue = "", originalValue = "
     input.dataset.originalValue = String(originalValue ?? "");
     input.dataset.trackChange = "true";
     input.value = String(initialValue ?? "");
+
+    if (field.type === "choice" && String(initialValue ?? "") && input.value !== String(initialValue ?? "")) {
+        const fallbackOption = document.createElement("option");
+        fallbackOption.value = String(initialValue ?? "");
+        fallbackOption.textContent = getFieldValue(field.logicalName) || String(initialValue ?? "");
+        input.appendChild(fallbackOption);
+        input.value = String(initialValue ?? "");
+    }
+
     input.addEventListener("input", updateSaveButtonVisibility);
     input.addEventListener("change", updateSaveButtonVisibility);
 
