@@ -195,7 +195,17 @@
             .ticket-header-card { grid-template-columns: 1fr; }
             .ticket-header-right { border-left: 0; border-top: 1px solid #edebe9; padding-left: 0; padding-top: 12px; }
         }
-    </style>
+    
+/* Compact ticket header override */
+.ticket-header{padding:10px 12px!important;gap:14px!important}
+.ticket-title{font-size:18px!important;font-weight:600!important}
+.ticket-sub{font-size:14px!important}
+.ticket-badge{font-size:12px!important;padding:2px 8px!important}
+.ticket-right{min-width:210px!important;padding-left:20px!important}
+.ticket-right *{font-size:13px!important}
+.priority{white-space:nowrap!important;display:inline-block}
+
+</style>
 </head>
 <body>
     <header id="addin-header">
@@ -258,6 +268,6 @@
         </div>
     </div>
 
-    <script src="taskpane.js?v=msa-partnercontact-istracked-fix2-20260629"></script>
+    <script src="taskpane.js?v=noname-customer-20260629"></script>
 </body>
 </html>
