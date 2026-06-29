@@ -31,7 +31,8 @@ let currentState = {
     incidentData: {},
     emailData: {},
     internetMessageId: null,
-    handlersInitialized: false
+    handlersInitialized: false,
+    formBaseline: null
 };
 
 // 2. ADD-IN START
@@ -376,7 +377,11 @@ function renderUI() {
 
     renderDescriptionSection();
     evaluateActionButtonsLogic();
-    updateSaveButtonVisibility();
+
+    // Nach dem Rendern einen stabilen Ausgangszustand speichern.
+    // Das verhindert, dass programmatisch gesetzte Werte, Browser-Normalisierung
+    // von Textarea-Zeilenumbruechen oder Lookup-Anzeigetexte sofort als Aenderung gelten.
+    resetFormChangeTracking();
 }
 
 function getMissingRequiredFields() {
@@ -796,28 +801,67 @@ function evaluateActionButtonsLogic() {
     });
 }
 function normalizeComparableValue(value) {
-    // Textarea-Werte normalisieren Zeilenumbrueche im Browser oft von CRLF auf LF.
-    // Ohne diese Normalisierung wird ein unveraenderter Beschreibungstext faelschlich
-    // als geaendert erkannt und der Speicherbutton sofort angezeigt.
-    return String(value ?? "").replace(/\r\n/g, "\n");
+    return String(value ?? "")
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n");
 }
 
-function isTrackedInputChanged(input) {
-    if (!input || input.dataset.trackChange !== "true") return false;
+function getTrackedFormSnapshot() {
+    const snapshot = {};
 
-    const field = D365_CONFIG.requiredFields.find(f => f.logicalName === input.dataset.logicalName);
+    document.querySelectorAll('[data-track-change="true"]').forEach(input => {
+        const key = input.dataset.logicalName || input.id;
+        const field = D365_CONFIG.requiredFields.find(f => f.logicalName === key);
 
-    if (field && field.type === "lookup") {
-        const lookupIdChanged = String(input.dataset.lookupId || "") !== String(input.dataset.originalLookupId || "");
-        const displayChanged = normalizeComparableValue(input.value).trim() !== normalizeComparableValue(input.dataset.originalValue).trim();
-        return lookupIdChanged || displayChanged;
+        if (field && field.type === "lookup") {
+            snapshot[key] = {
+                value: normalizeComparableValue(input.value).trim(),
+                lookupId: String(input.dataset.lookupId || "")
+            };
+            return;
+        }
+
+        snapshot[key] = {
+            value: normalizeComparableValue(input.value)
+        };
+    });
+
+    return snapshot;
+}
+
+function snapshotsEqual(a, b) {
+    const left = a || {};
+    const right = b || {};
+    const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
+
+    for (const key of keys) {
+        const l = left[key] || {};
+        const r = right[key] || {};
+
+        if (String(l.value ?? "") !== String(r.value ?? "")) return false;
+        if (String(l.lookupId ?? "") !== String(r.lookupId ?? "")) return false;
     }
 
-    return normalizeComparableValue(input.value) !== normalizeComparableValue(input.dataset.originalValue);
+    return true;
+}
+
+function resetFormChangeTracking() {
+    currentState.formBaseline = getTrackedFormSnapshot();
+
+    // Erst im naechsten Event-Loop erneut pruefen, weil Outlook/WebView und Browser
+    // Eingabefelder teilweise nach dem DOM-Einfuegen normalisieren.
+    setElementVisible("btn-save-missing", false);
+    setElementVisible("btn-save-complete", false);
+
+    window.setTimeout(() => {
+        currentState.formBaseline = getTrackedFormSnapshot();
+        updateSaveButtonVisibility();
+    }, 0);
 }
 
 function hasAnyInputChanges() {
-    return Array.from(document.querySelectorAll('[data-track-change="true"]')).some(isTrackedInputChanged);
+    if (!currentState.formBaseline) return false;
+    return !snapshotsEqual(currentState.formBaseline, getTrackedFormSnapshot());
 }
 
 function setElementVisible(elementOrId, isVisible) {
@@ -831,7 +875,7 @@ function setElementVisible(elementOrId, isVisible) {
 
 function isElementVisible(elementOrId) {
     const el = typeof elementOrId === "string" ? document.getElementById(elementOrId) : elementOrId;
-    return !!el && !el.classList.contains("hidden") && !el.hidden;
+    return !!el && !el.classList.contains("hidden") && !el.hidden && el.style.display !== "none";
 }
 
 function updateSaveButtonVisibility() {
