@@ -23,6 +23,7 @@ const D365_CONFIG = {
     sapTransferReadyFormattedText: "übergabefähig"
 };
 
+const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
     incidentData: {},
@@ -431,12 +432,42 @@ function getMissingRequiredFields() {
     return D365_CONFIG.requiredFields.filter(field => !hasRequiredFieldValue(field.logicalName));
 }
 
+function isEmptyCustomerName(value) {
+    const normalized = String(value || "").trim().toUpperCase();
+
+    return EMPTY_CUSTOMERS.some(name =>
+        String(name).trim().toUpperCase() === normalized
+    );
+}
+
 function hasRequiredFieldValue(logicalName) {
     const inc = currentState.incidentData || {};
+
     const rawValue = inc[logicalName];
-    const formattedValue = inc[`${logicalName}@OData.Community.Display.V1.FormattedValue`];
+    const formattedValue =
+        inc[`${logicalName}@OData.Community.Display.V1.FormattedValue`];
+
+    if (logicalName === "_customerid_value") {
+        const customerName = String(formattedValue || "").trim();
+
+        if (!customerName) {
+            return false;
+        }
+
+        if (isEmptyCustomerName(customerName)) {
+            return false;
+        }
+
+        return true;
+    }
+
     const value = formattedValue ?? rawValue;
-    return value !== undefined && value !== null && String(value).trim() !== "";
+
+    return (
+        value !== undefined &&
+        value !== null &&
+        String(value).trim() !== ""
+    );
 }
 
 function renderCompleteTicketInformation(container) {
@@ -663,8 +694,19 @@ function appendInputField(container, field, initialValue = "", originalValue = "
         }
     }
 
-    input.id = `input-${field.logicalName}`;
-    input.dataset.logicalName = field.logicalName;
+input.id = `input-${field.logicalName}`;
+input.dataset.logicalName = field.logicalName;
+
+// NONAME gilt im Eingabefeld als leer, obwohl das Lookup technisch gesetzt ist.
+if (field.logicalName === "_customerid_value") {
+    const currentCustomerName = getLookupDisplayValue("_customerid_value");
+
+    if (isEmptyCustomerName(currentCustomerName)) {
+        input.value = "";
+        input.dataset.lookupId = "";
+        input.dataset.originalLookupId = "";
+    }
+}
     input.dataset.originalValue = String(originalValue ?? "");
     input.dataset.trackChange = "true";
     input.value = String(initialValue ?? "");
