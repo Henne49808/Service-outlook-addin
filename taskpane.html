@@ -68,46 +68,50 @@
         select { width: 100%; padding: 6px 8px; border: 1px solid #a19f9d; border-radius: 2px; box-sizing: border-box; font-family: inherit; margin-top: 4px; background: #fff; }
         .description-box { margin-top: 8px; }
         .description-edit { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #d0d0d0; border-radius: 2px; background: #fafafa; min-height: 120px; max-height: 280px; overflow-y: auto; line-height: 1.45; resize: vertical; font-family: inherit; }
+        
+        /* OBERER BEREICH: Optimierter & verkleinerter Header-Karten-Container */
         .ticket-header-card {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 135px;
+            grid-template-columns: minmax(0, 1fr) 160px; /* Rechter Spalte 160px fest zugewiesen (vorher 135px) */
             gap: 12px;
             border: 1px solid #edebe9;
             border-radius: 6px;
-            padding: 14px;
+            padding: 12px;
             background: #ffffff;
             box-shadow: 0 1px 2px rgba(0,0,0,0.06);
         }
         .ticket-header-left {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             align-items: flex-start;
             min-width: 0;
         }
         .ticket-header-icon {
-            width: 42px;
-            height: 42px;
+            width: 36px; /* Leicht verkleinert (vorher 42px) */
+            height: 36px;
             border-radius: 50%;
             background: #e8f1fb;
             color: #005a9e;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 22px;
+            font-size: 18px;
             flex-shrink: 0;
         }
         .ticket-header-main { min-width: 0; }
+        
+        /* Überschrift verkleinert und dezenter gestaltet */
         .ticket-title-main {
-            font-size: 18px;
-            font-weight: 700;
+            font-size: 15px; /* Angenehmer und weniger dominant (vorher 18px) */
+            font-weight: 600; /* Auf Standard-Semibold reduziert */
             color: #201f1e;
-            margin: 0 0 6px 0;
+            margin: 0 0 4px 0;
             word-break: break-word;
         }
         .ticket-subtitle {
-            font-size: 13px;
-            color: #323130;
-            margin-bottom: 8px;
+            font-size: 12px; /* Leicht verkleinert (vorher 13px) */
+            color: #605e5c;
+            margin-bottom: 6px;
             word-break: break-word;
         }
         .ticket-status-badge {
@@ -117,41 +121,48 @@
             background: #dff6dd;
             color: #107c41;
             font-weight: 600;
-            padding: 3px 9px;
+            padding: 2px 8px;
             border-radius: 999px;
-            font-size: 12px;
+            font-size: 11px;
         }
         .ticket-status-dot {
-            width: 6px;
-            height: 6px;
+            width: 5px;
+            height: 5px;
             border-radius: 50%;
             background: #107c41;
             display: inline-block;
         }
+        
+        /* RECHTER BEREICH: Mehr Platz und Schutz vor Umbrüchen */
         .ticket-header-right {
             border-left: 1px solid #edebe9;
-            padding-left: 12px;
+            padding-left: 14px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
+            justify-content: center; /* Zentriert die Inhalte vertikal */
+            flex-shrink: 0;
         }
         .ticket-side-label {
             font-size: 11px;
             color: #605e5c;
             margin-bottom: 2px;
+            white-space: nowrap; /* Verhindert das Umbrechen des Labels */
         }
         .ticket-side-value {
-            font-size: 13px;
+            font-size: 12px;
             color: #201f1e;
-            word-break: break-word;
+            word-break: keep-all; /* Behält Wörter zusammen */
+            white-space: nowrap;  /* Priorität wird zwingend einzeilig gehalten */
         }
         .ticket-priority-badge {
             display: inline-block;
             background: #fff4ce;
             color: #8a5800;
-            padding: 3px 8px;
-            border-radius: 6px;
+            padding: 2px 8px;
+            border-radius: 4px;
             font-weight: 600;
+            white-space: nowrap; /* Absoluter Umbruchschutz für das Badge */
         }
 
         .lookup-field-group { position: relative; }
@@ -191,21 +202,22 @@
             font-size: 12px;
             cursor: pointer;
         }
-        @media (max-width: 360px) {
+        
+        /* Mobile Ansichten (deaktiviert erzwungenen Umbruch bei schmalen Displays zu früh) */
+        @media (max-width: 320px) {
             .ticket-header-card { grid-template-columns: 1fr; }
             .ticket-header-right { border-left: 0; border-top: 1px solid #edebe9; padding-left: 0; padding-top: 12px; }
         }
-    
-/* Compact ticket header override */
-.ticket-header{padding:10px 12px!important;gap:14px!important}
-.ticket-title{font-size:18px!important;font-weight:600!important}
-.ticket-sub{font-size:14px!important}
-.ticket-badge{font-size:12px!important;padding:2px 8px!important}
-.ticket-right{min-width:210px!important;padding-left:20px!important}
-.ticket-right *{font-size:13px!important}
-.priority{white-space:nowrap!important;display:inline-block}
-
-</style>
+        
+        /* Bereits vorhandene Overrides am Ende der Datei wurden für Konsistenz mit angepasst */
+        .ticket-header{padding:10px 12px!important;gap:14px!important}
+        .ticket-title{font-size:15px!important;font-weight:600!important}
+        .ticket-sub{font-size:12px!important}
+        .ticket-badge{font-size:11px!important;padding:2px 8px!important}
+        .ticket-right{min-width:160px!important;padding-left:14px!important}
+        .ticket-right *{font-size:12px!important}
+        .priority{white-space:nowrap!important;display:inline-block}
+    </style>
 </head>
 <body>
     <header id="addin-header">
@@ -221,18 +233,15 @@
             <p style="text-align:center; color:#605e5c;">Daten werden geladen...</p>
         </div>
 
-        <!-- ✅ Login-Bereich: wird angezeigt wenn kein Token vorhanden -->
         <div id="login-container" class="hidden section">
             <img src="hedelius_logo.png" alt="Hedelius" style="width:120px; margin-bottom:16px;">
             <p>Bitte melden Sie sich mit Ihrem Hedelius-Konto an, um fortzufahren.</p>
             <button id="btn-manual-login" class="btn btn-primary">🔐 Bei Hedelius anmelden</button>
-            <!-- Fallback falls Popup blockiert wird -->
             <div id="login-link-container" class="hidden">
                 <p>Popup blockiert? <a href="https://henne49808.github.io/Service-outlook-addin/auth.html" target="_blank">Login-Seite direkt öffnen</a>, danach diese Seite neu laden.</p>
             </div>
         </div>
 
-        <!-- Hauptinhalt nach Login -->
         <div id="app-container" class="hidden">
             <div id="section-filled" class="section">
                 <div id="filled-fields-container"></div>
