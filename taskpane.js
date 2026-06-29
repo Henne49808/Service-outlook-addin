@@ -6,9 +6,18 @@
 const D365_CONFIG = {
     apiEndpoint: "https://hedelius.api.crm4.dynamics.com/api/data/v9.2",
 
-    // Felder, die im Add-In angezeigt bzw. bei fehlendem Wert gepflegt werden sollen.
-    fields: [
-        { logicalName: "con_maschinennummer", label: "Maschinennummer", type: "text" }
+    // Pflichtinformationen für die Vollständigkeitsprüfung in Block 2A/2B.
+    requiredFields: [
+        { logicalName: "_customerid_value", patchName: "customerid_account", entitySet: "accounts", label: "Kunde", type: "lookup", searchEntitySet: "accounts", searchSelect: "accountid,name", searchFilterField: "name", bindEntitySet: "accounts", idField: "accountid", displayField: "name" },
+        { logicalName: "_primarycontactid_value", patchName: "primarycontactid", entitySet: "contacts", label: "Ansprechpartner", type: "lookup", searchEntitySet: "contacts", searchSelect: "contactid,fullname,emailaddress1", searchFilterField: "fullname", bindEntitySet: "contacts", idField: "contactid", displayField: "fullname" },
+        { logicalName: "con_maschinennummer", label: "Maschinennummer", type: "text" },
+        { logicalName: "prioritycode", label: "Priorität", type: "choice", options: [
+            { value: "", label: "Bitte auswählen..." },
+            { value: 1, label: "Hoch" },
+            { value: 2, label: "Normal" },
+            { value: 3, label: "Niedrig" }
+        ] },
+        { logicalName: "description", label: "Beschreibung", type: "textarea" }
     ],
 
     // Status-/Choice-Werte bitte nach dem Test mit den echten Optionswerten aus Dataverse befüllen.
@@ -335,36 +344,97 @@ async function updateIncidentEntity(payload) {
 function renderUI() {
     const filledContainer = document.getElementById("filled-fields-container");
     const missingForm = document.getElementById("missing-fields-form");
+    const completeContainer = document.getElementById("complete-fields-container");
 
     filledContainer.replaceChildren();
     missingForm.replaceChildren();
+    if (completeContainer) completeContainer.replaceChildren();
 
     renderTicketHeader(filledContainer);
 
-    let hasMissing = false;
+    const missingFields = getMissingRequiredFields();
+    const hasMissing = missingFields.length > 0;
 
-    D365_CONFIG.fields.forEach(field => {
-        const value = getFieldValue(field.logicalName);
-
-        if (value !== undefined && value !== null && value !== "") {
-            appendReadOnlyField(filledContainer, field.label, value);
-        } else if (!field.readOnly) {
-            hasMissing = true;
-            appendInputField(missingForm, field);
-        }
-    });
-
-    document.getElementById("btn-save-missing").classList.toggle("hidden", !hasMissing);
     document.getElementById("section-missing").classList.toggle("hidden", !hasMissing);
+    document.getElementById("section-complete").classList.toggle("hidden", hasMissing);
+    document.getElementById("btn-save-missing").classList.toggle("hidden", !hasMissing);
 
-    
-    const __desc=currentState.incidentData?.description||"";
-    const __el=document.getElementById("incident-description");
-    if(__el){
-      __el.innerHTML=__desc?__desc.replace(/\r?\n/g,"<br>"):"<em>Keine Beschreibung vorhanden.</em>";
+    if (hasMissing) {
+        missingFields.forEach(field => appendInputField(missingForm, field));
+    } else {
+        renderCompleteTicketInformation(completeContainer);
     }
 
+    renderDescriptionSection();
     evaluateActionButtonsLogic();
+}
+
+function getMissingRequiredFields() {
+    return D365_CONFIG.requiredFields.filter(field => !hasRequiredFieldValue(field.logicalName));
+}
+
+function hasRequiredFieldValue(logicalName) {
+    const inc = currentState.incidentData || {};
+    const rawValue = inc[logicalName];
+    const formattedValue = inc[`${logicalName}@OData.Community.Display.V1.FormattedValue`];
+    const value = formattedValue ?? rawValue;
+    return value !== undefined && value !== null && String(value).trim() !== "";
+}
+
+function renderCompleteTicketInformation(container) {
+    if (!container) return;
+
+    const rows = [
+        ["Kunde", getLookupDisplayValue("_customerid_value")],
+        ["Ansprechpartner", getLookupDisplayValue("_primarycontactid_value")],
+        ["Maschinennummer", getFieldValue("con_maschinennummer")],
+        ["Priorität", getFieldValue("prioritycode")],
+        ["Beschreibung", getFieldValue("description")]
+    ];
+
+    rows.forEach(([label, value]) => appendReadOnlyRow(container, label, value || "-"));
+}
+
+function appendReadOnlyRow(container, label, value) {
+    const row = document.createElement("div");
+    row.className = "readonly-row";
+
+    const labelDiv = document.createElement("div");
+    labelDiv.className = "readonly-label";
+    labelDiv.textContent = label;
+
+    const valueDiv = document.createElement("div");
+    valueDiv.className = "readonly-value";
+    valueDiv.textContent = String(value);
+
+    row.append(labelDiv, valueDiv);
+    container.appendChild(row);
+}
+
+function getLookupDisplayValue(logicalName) {
+    const inc = currentState.incidentData || {};
+    return inc[`${logicalName}@OData.Community.Display.V1.FormattedValue`] || inc[logicalName] || "";
+}
+
+function renderDescriptionSection() {
+    const description = currentState.incidentData?.description || "";
+    const el = document.getElementById("incident-description");
+    if (!el) return;
+
+    el.textContent = "";
+
+    if (!description) {
+        const empty = document.createElement("em");
+        empty.textContent = "Keine Beschreibung vorhanden.";
+        el.appendChild(empty);
+        return;
+    }
+
+    const lines = String(description).split(/\r?\n/);
+    lines.forEach((line, index) => {
+        if (index > 0) el.appendChild(document.createElement("br"));
+        el.appendChild(document.createTextNode(line));
+    });
 }
 
 function renderTicketHeader(container) {
@@ -402,10 +472,34 @@ function appendInputField(container, field) {
     label.setAttribute("for", `input-${field.logicalName}`);
     label.textContent = field.label;
 
-    const input = field.type === "textarea" ? document.createElement("textarea") : document.createElement("input");
+    const marker = document.createElement("span");
+    marker.className = "required-marker";
+    marker.textContent = "*";
+    label.appendChild(marker);
+
+    let input;
+
+    if (field.type === "textarea") {
+        input = document.createElement("textarea");
+        input.rows = 4;
+    } else if (field.type === "choice") {
+        input = document.createElement("select");
+        field.options.forEach(opt => {
+            const option = document.createElement("option");
+            option.value = opt.value;
+            option.textContent = opt.label;
+            input.appendChild(option);
+        });
+    } else {
+        input = document.createElement("input");
+        input.type = "text";
+        if (field.type === "lookup") {
+            input.placeholder = `${field.label} suchen/eingeben...`;
+        }
+    }
+
     input.id = `input-${field.logicalName}`;
-    if (field.type !== "textarea") input.type = "text";
-    if (field.type === "textarea") input.rows = 2;
+    input.dataset.logicalName = field.logicalName;
 
     div.append(label, input);
     container.appendChild(div);
@@ -466,22 +560,14 @@ async function saveMissingFields() {
     hideStatus();
     toggleLoading(true);
 
-    const updatePayload = {};
-
-    D365_CONFIG.fields.forEach(field => {
-        const el = document.getElementById(`input-${field.logicalName}`);
-        if (el && el.value.trim()) {
-            updatePayload[field.logicalName] = el.value.trim();
-        }
-    });
-
-    if (Object.keys(updatePayload).length === 0) {
-        toggleLoading(false);
-        showStatus("Es wurden keine Eingaben zum Speichern gefunden.", "error");
-        return;
-    }
-
     try {
+        const updatePayload = await buildMissingFieldsPayload();
+
+        if (Object.keys(updatePayload).length === 0) {
+            showStatus("Es wurden keine Eingaben zum Speichern gefunden.", "error");
+            return;
+        }
+
         await updateIncidentEntity(updatePayload);
         showStatus("Eingaben erfolgreich gespeichert.", "success");
         await fetchDynamicsData(currentState.internetMessageId);
@@ -491,6 +577,58 @@ async function saveMissingFields() {
     } finally {
         toggleLoading(false);
     }
+}
+
+async function buildMissingFieldsPayload() {
+    const payload = {};
+
+    for (const field of D365_CONFIG.requiredFields) {
+        const el = document.getElementById(`input-${field.logicalName}`);
+        if (!el) continue;
+
+        const value = String(el.value || "").trim();
+        if (!value) continue;
+
+        if (field.type === "lookup") {
+            const lookupId = await resolveLookupValue(field, value);
+            payload[`${field.patchName}@odata.bind`] = `/${field.bindEntitySet}(${lookupId})`;
+        } else if (field.type === "choice") {
+            const numericValue = Number(value);
+            if (!Number.isFinite(numericValue)) {
+                throw new Error(`Ungueltiger Wert fuer ${field.label}.`);
+            }
+            payload[field.logicalName] = numericValue;
+        } else {
+            payload[field.logicalName] = value;
+        }
+    }
+
+    return payload;
+}
+
+async function resolveLookupValue(field, searchText) {
+    const token = await getDynamicsAccessToken();
+    const headers = getDataverseHeaders(token);
+    const safeText = escapeODataString(searchText);
+
+    const url = buildDataverseUrl(field.searchEntitySet, {
+        "$select": field.searchSelect,
+        "$filter": `${field.searchFilterField} eq '${safeText}'`,
+        "$top": "2"
+    });
+
+    const result = await fetchJsonOrThrow(url, { method: "GET", headers }, `${field.label}-Suche`);
+    const matches = result.value || [];
+
+    if (matches.length === 0) {
+        throw new Error(`${field.label} "${searchText}" wurde in Dynamics nicht gefunden. Bitte exakten Namen verwenden.`);
+    }
+
+    if (matches.length > 1) {
+        throw new Error(`${field.label} "${searchText}" ist nicht eindeutig. Bitte den Namen in Dynamics eindeutiger pflegen bzw. auswählen.`);
+    }
+
+    return matches[0][field.idField];
 }
 
 async function handleSapTransfer() {

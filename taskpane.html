@@ -35,6 +35,13 @@
         .btn-secondary:hover:not(:disabled) { background-color: #edebe9; }
         .button-row { display: flex; gap: 8px; margin-bottom: 8px; }
         .button-row .btn { flex: 1; margin-bottom: 0; }
+        .section-note { background:#f3f9ff; border:1px solid #deecf9; padding:8px; margin-bottom:10px; border-radius:2px; color:#323130; }
+        .required-marker { color:#a80000; margin-left:3px; }
+        .readonly-grid { display:flex; flex-direction:column; gap:0; }
+        .readonly-row { display:grid; grid-template-columns: 42% 58%; gap:8px; padding:7px 0; border-bottom:1px solid #edebe9; }
+        .readonly-row:last-child { border-bottom:0; }
+        .readonly-label { font-weight:600; color:#323130; }
+        .readonly-value { color:#323130; word-break:break-word; }
         .hidden { display: none !important; }
         #status-message { padding: 10px; border-radius: 2px; font-weight: 500; margin-bottom: 10px; }
         .status-error { background-color: #fde7e9; color: #a80000; border-left: 4px solid #a80000; }
@@ -86,11 +93,24 @@
                 <h2>Vorhandene Informationen</h2>
                 <div id="filled-fields-container"></div>
             </div>
-            <div id="section-missing" class="section">
-                <h2>Fehlende Eingaben</h2>
+
+            <div id="section-missing" class="section hidden">
+                <h2>Fehlende Werte</h2>
+                <div class="section-note">Bitte erfassen Sie die fehlenden Informationen, damit das Ticket vollständig ist.</div>
                 <div id="missing-fields-form"></div>
                 <button id="btn-save-missing" class="btn btn-secondary" style="margin-top:10px;">Eingaben speichern</button>
             </div>
+
+            <div id="section-complete" class="section hidden">
+                <h2>Ticketinformationen</h2>
+                <div id="complete-fields-container" class="readonly-grid"></div>
+            </div>
+
+            <div id="section-description" class="section">
+                <h2>Beschreibung</h2>
+                <div id="incident-description" class="description-box"><em>Keine Beschreibung vorhanden.</em></div>
+            </div>
+
             <div id="section-actions" class="section">
                 <h2>Aktionen</h2>
                 <button id="btn-sap-transfer" class="btn btn-primary hidden">An SAP übergeben</button>
