@@ -1009,9 +1009,17 @@ async function saveMissingFields() {
         }
 
         await updateIncidentEntity(updatePayload);
-        showStatus("Eingaben erfolgreich gespeichert.", "success");
-        await fetchDynamicsData(currentState.internetMessageId);
-        renderUI();
+
+showStatus("Eingaben erfolgreich gespeichert. Daten werden aktualisiert...", "success");
+
+// 6 Sekunden warten, damit nachgelagerte Power-Automate-Flows Zeit haben,
+// den Incident zu aktualisieren.
+await sleep(6000);
+
+await fetchDynamicsData(currentState.internetMessageId);
+renderUI();
+
+showStatus("Daten wurden aktualisiert.", "success");
     } catch (err) {
         showStatus("Fehler beim Speichern: " + err.message, "error");
     } finally {
@@ -1245,4 +1253,8 @@ function escapeHtml(value) {
         .replace(/>/g, "&gt;")
         .replace(/\"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
