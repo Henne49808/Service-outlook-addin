@@ -357,6 +357,13 @@ function renderUI() {
     document.getElementById("btn-save-missing").classList.toggle("hidden", !hasMissing);
     document.getElementById("section-missing").classList.toggle("hidden", !hasMissing);
 
+    
+    const __desc=currentState.incidentData?.description||"";
+    const __el=document.getElementById("incident-description");
+    if(__el){
+      __el.innerHTML=__desc?__desc.replace(/\r?\n/g,"<br>"):"<em>Keine Beschreibung vorhanden.</em>";
+    }
+
     evaluateActionButtonsLogic();
 }
 
