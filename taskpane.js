@@ -363,10 +363,10 @@ function renderUI() {
     const missingFields = getMissingRequiredFields();
     const hasMissing = missingFields.length > 0;
 
-    document.getElementById("section-missing").classList.toggle("hidden", !hasMissing);
-    document.getElementById("section-complete").classList.toggle("hidden", hasMissing);
-    document.getElementById("btn-save-missing").classList.add("hidden");
-    document.getElementById("btn-save-complete").classList.add("hidden");
+    setElementVisible("section-missing", hasMissing);
+    setElementVisible("section-complete", !hasMissing);
+    setElementVisible("btn-save-missing", false);
+    setElementVisible("btn-save-complete", false);
 
     if (hasMissing) {
         missingFields.forEach(field => appendInputField(missingForm, field));
@@ -811,18 +811,27 @@ function hasAnyInputChanges() {
     return Array.from(document.querySelectorAll('[data-track-change="true"]')).some(isTrackedInputChanged);
 }
 
+function setElementVisible(elementOrId, isVisible) {
+    const el = typeof elementOrId === "string" ? document.getElementById(elementOrId) : elementOrId;
+    if (!el) return;
+
+    el.classList.toggle("hidden", !isVisible);
+    el.hidden = !isVisible;
+    el.style.display = isVisible ? "" : "none";
+}
+
+function isElementVisible(elementOrId) {
+    const el = typeof elementOrId === "string" ? document.getElementById(elementOrId) : elementOrId;
+    return !!el && !el.classList.contains("hidden") && !el.hidden;
+}
+
 function updateSaveButtonVisibility() {
     const hasChanges = hasAnyInputChanges();
-    const saveMissing = document.getElementById("btn-save-missing");
-    const saveComplete = document.getElementById("btn-save-complete");
+    const missingVisible = isElementVisible("section-missing");
+    const completeVisible = isElementVisible("section-complete");
 
-    if (saveMissing && !document.getElementById("section-missing").classList.contains("hidden")) {
-        saveMissing.classList.toggle("hidden", !hasChanges);
-    }
-
-    if (saveComplete && !document.getElementById("section-complete").classList.contains("hidden")) {
-        saveComplete.classList.toggle("hidden", !hasChanges);
-    }
+    setElementVisible("btn-save-missing", hasChanges && missingVisible);
+    setElementVisible("btn-save-complete", hasChanges && completeVisible);
 }
 
 function setupEventHandlers() {
