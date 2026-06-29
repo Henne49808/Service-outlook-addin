@@ -253,7 +253,7 @@ async function fetchDynamicsData(messageId) {
     }
 
     const incidentUrl = buildDataverseUrl(`incidents(${regardingId})`, {
-        "$select": "incidentid,ticketnumber,title,con_maschinennummer,description,prioritycode,new_sap_servicemeldungsnummer,new_sap_besitzer,new_meldungsbezugstyp,new_sap_syncstatus,_customerid_value,_primarycontactid_value,statecode,statuscode"
+        "$select": "incidentid,ticketnumber,title,con_maschinennummer,description,prioritycode,con_sapid,con_besitzer,hed_sapsyncstatus,_customerid_value,_primarycontactid_value,statecode,statuscode"
     });
 
     const incident = await fetchJsonOrThrow(incidentUrl, { method: "GET", headers }, "Dynamics-Incident-Abfrage");
