@@ -23,7 +23,7 @@ const D365_CONFIG = {
     sapTransferReadyFormattedText: "übergabefähig"
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.05";
+const ADDIN_BUILD   = "20260701.06";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
@@ -1366,13 +1366,14 @@ function handleFreeButton() {
 async function handleCloseTicket() {
     hideStatus();
 
-    const confirmed = window.confirm(
-        "Soll dieses Ticket wirklich abgeschlossen werden?\n\nDieser Vorgang kann nicht ohne Weiteres rückgängig gemacht werden."
-    );
+    const confirmed = await showConfirmationDialog(
+    "Ticket abschließen",
+    "Soll dieses Ticket wirklich abgeschlossen werden? Dieser Vorgang kann nicht ohne Weiteres rückgängig gemacht werden."
+);
 
-    if (!confirmed) {
-        return;
-    }
+if (!confirmed) {
+    return;
+}
 
     toggleLoading(true);
 
@@ -1448,6 +1449,48 @@ function escapeHtml(value) {
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function showConfirmationDialog(title, message) {
+    return new Promise(resolve => {
+        const url =
+            "https://henne49808.github.io/Service-outlook-addin/confirm.html" +
+            `?title=${encodeURIComponent(title)}` +
+            `&message=${encodeURIComponent(message)}`;
+
+        Office.context.ui.displayDialogAsync(
+            url,
+            { height: 35, width: 35, displayInIframe: false },
+            result => {
+                if (result.status !== Office.AsyncResultStatus.Succeeded) {
+                    showStatus("Bestätigungsdialog konnte nicht geöffnet werden.", "error");
+                    resolve(false);
+                    return;
+                }
+
+                const dialog = result.value;
+
+                dialog.addEventHandler(
+                    Office.EventType.DialogMessageReceived,
+                    arg => {
+                        dialog.close();
+
+                        try {
+                            const data = JSON.parse(arg.message);
+                            resolve(data.confirmed === true);
+                        } catch {
+                            resolve(false);
+                        }
+                    }
+                );
+
+                dialog.addEventHandler(
+                    Office.EventType.DialogEventReceived,
+                    () => resolve(false)
+                );
+            }
+        );
+    });
 }
 
 function renderAddInVersion() {
