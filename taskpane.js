@@ -1367,8 +1367,8 @@ async function handleCloseTicket() {
     hideStatus();
 
     const confirmed = await showConfirmationDialog(
-    "Ticket abschließen",
-    "Soll dieses Ticket wirklich abgeschlossen werden? Dieser Vorgang kann nicht ohne Weiteres rückgängig gemacht werden."
+    "Ticket als erledigt markieren",
+    "Soll dieses Ticket wirklich als erledigt markiert werden? Dieser Vorgang kann nicht ohne Weiteres rückgängig gemacht werden."
 );
 
 if (!confirmed) {
@@ -1379,7 +1379,7 @@ if (!confirmed) {
 
     try {
         if (!currentState.incidentId) {
-            throw new Error("Kein Incident geladen. Ticket kann nicht abgeschlossen werden.");
+            throw new Error("Kein Incident geladen. Ticket kann nicht als erledigt markiert werden.");
         }
 
         const token = await getDynamicsAccessToken();
@@ -1404,7 +1404,7 @@ if (!confirmed) {
             throw new Error(`CloseIncident fehlgeschlagen (HTTP ${response.status}): ${details}`);
         }
 
-        showStatus("Ticket erfolgreich abgeschlossen.", "success");
+        showStatus("Ticket erfolgreich als erledigt markiert.", "success");
 
         await fetchDynamicsData(currentState.internetMessageId);
         renderUI();
