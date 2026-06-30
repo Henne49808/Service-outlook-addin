@@ -19,11 +19,16 @@ const D365_CONFIG = {
 
     // Status-/Choice-Werte bitte nach dem Test mit den echten Optionswerten aus Dataverse befüllen.
     // Wichtig: Choice-Spalten werden in Dataverse per PATCH mit NUMERISCHEN Werten gesetzt, nicht mit Text.
-    sapTransferTargetStatusValue: null, // Beispiel: 123456789
-    sapTransferReadyFormattedText: "übergabefähig"
+    // Status-/Choice-Werte
+sapTransferTargetStatusValue: null,
+sapTransferReadyFormattedText: "übergabefähig",
+
+// Incident abschließen / stornieren
+incidentCancelledStatus: 6,
+incidentClosedStatus: 281370004,
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.08";
+const ADDIN_BUILD   = "20260701.08"20260701.08"20260701.08"20260701.08";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
@@ -1383,21 +1388,57 @@ if (!confirmed) {
         }
 
         const token = await getDynamicsAccessToken();
-        const url = `${D365_CONFIG.apiEndpoint}/CloseIncident`;
 
-        const payload = {
-            IncidentResolution: {
-                "subject": "Ticket abgeschlossen",
-                "incidentid@odata.bind": `/incidents(${currentState.incidentId})`
-            },
-            Status: 6
-        };
+const sapStatus = Number(currentState.incidentData?.hed_sapsyncstatus);
 
-        const response = await fetch(url, {
+const hasSapId =
+    currentState.incidentData?.con_sapid &&
+    String(currentState.incidentData.con_sapid).trim() !== "";
+
+const sentToSap =
+    hasSapId ||
+    sapStatus === D365_CONFIG.incidentClosedStatus;
+
+        let response;
+
+if (sentToSap) {
+
+    // Ticket wurde bereits an SAP übergeben → regulär abschließen
+
+    const payload = {
+        IncidentResolution: {
+            subject: "Ticket als erledigt markiert",
+            "incidentid@odata.bind": `/incidents(${currentState.incidentId})`
+        },
+        Status: D365_CONFIG.incidentClosedStatus
+    };
+
+    response = await fetch(
+        `${D365_CONFIG.apiEndpoint}/CloseIncident`,
+        {
             method: "POST",
             headers: getDataverseHeaders(token, true),
             body: JSON.stringify(payload)
-        });
+        }
+    );
+
+} else {
+
+    // Ticket wurde nicht an SAP übergeben → stornieren
+
+    response = await fetch(
+        `${D365_CONFIG.apiEndpoint}/incidents(${currentState.incidentId})`,
+        {
+            method: "PATCH",
+            headers: getDataverseHeaders(token, true),
+            body: JSON.stringify({
+                statecode: 2,
+                statuscode: D365_CONFIG.incidentCancelledStatus
+            })
+        }
+    );
+
+};
 
         if (!response.ok) {
             const details = await readDataverseError(response);
@@ -1508,6 +1549,5 @@ function showConfirmationDialog(title, message) {
 function renderAddInVersion() {
     const el = document.getElementById("addin-version");
     if (!el) return;
-
     el.textContent = `Version ${ADDIN_VERSION} (Build ${ADDIN_BUILD})`;
 }
