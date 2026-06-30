@@ -126,6 +126,7 @@ async function reloadCurrentMail(options = {}) {
         currentState.incidentId = null;
         currentState.incidentData = {};
         currentState.emailData = {};
+        currentState.eingangsdatenData = {};
         currentState.formBaseline = null;
 
         await loadAndRender();
@@ -428,7 +429,7 @@ async function fetchDynamicsData(messageId) {
 
     currentState.incidentId = incident.incidentid;
     currentState.incidentData = incident;
-    const eingangsdatenId = incident._hed_hedsvkieingangsdaten_value;
+    const eingangsdatenId = incident._hed_kieingangsdaten_value;
 
 currentState.eingangsdatenData = await fetchEingangsdaten(eingangsdatenId);
 }
