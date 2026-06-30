@@ -46,8 +46,20 @@
         .btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-primary { background-color: #0078d4; color: #ffffff; }
         .btn-primary:hover:not(:disabled) { background-color: #106ebe; }
-        .btn-secondary { background-color: #f3f2f1; color: #323130; border-color: #8a8886; }
-        .btn-secondary:hover:not(:disabled) { background-color: #edebe9; }
+        .btn-secondary {    background-color: #f3f2f1;    color: #323130;    border-color: #8a8886;}
+        .btn-secondary:hover:not(:disabled) {    background-color: #edebe9;}
+
+        /* Ticket abschließen */
+        .btn-danger-text {
+            background-color: #fde7e9;
+            color: #a80000;
+            border: 1px solid #d13438;
+            font-weight: 600;
+        }
+
+        .btn-danger-text:hover:not(:disabled) {
+            background-color: #f9d6d9;
+        }
 
         /* Speichern-Button bewusst auffaellig gruen darstellen */
         #btn-save-complete {
@@ -292,14 +304,14 @@
                 <h2>Aktionen</h2>
                 <button id="btn-sap-transfer" class="btn btn-primary hidden">An SAP übergeben</button>
                 <button id="btn-sap-forward" class="btn btn-primary hidden">An SAP-Besitzer weiterleiten</button>
-                <button id="btn-close-ticket" class="btn btn-secondary">Ticket abschließen</button>
                 <div class="button-row">
                     <button id="btn-open-dynamics" class="btn btn-secondary">In Dynamics anzeigen</button>
                     <button id="btn-free" class="btn btn-secondary" type="button">Frei</button>
                 </div>
+                <button id="btn-close-ticket" class="btn btn-secondary">Ticket abschließen</button>
             </div>
         </div>
     </div>
-    <script src="taskpane.js?v=20260701.03"></script>
+    <script src="taskpane.js?v=20260701.04"</script>
 </body>
 </html>
