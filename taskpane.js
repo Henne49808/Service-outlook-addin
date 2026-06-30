@@ -67,8 +67,46 @@ async function initAddIn() {
         }
 
         await loadAndRender();
+        registerItemChangedHandler();
     } catch (error) {
         console.error("Initialisierung fehlgeschlagen:", error);
+        showStatus(error.message, "error");
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+function registerItemChangedHandler() {
+    if (
+        Office.context.mailbox &&
+        Office.context.mailbox.addHandlerAsync
+    ) {
+        Office.context.mailbox.addHandlerAsync(
+            Office.EventType.ItemChanged,
+            handleItemChanged
+        );
+    }
+}
+
+async function handleItemChanged() {
+    hideStatus();
+    toggleLoading(true);
+
+    try {
+        const item = Office.context.mailbox.item;
+
+        if (!item || !item.internetMessageId) {
+            throw new Error("Die ausgewählte E-Mail hat keine InternetMessageId.");
+        }
+
+        currentState.internetMessageId = item.internetMessageId;
+        currentState.incidentId = null;
+        currentState.incidentData = {};
+        currentState.emailData = {};
+
+        await loadAndRender();
+    } catch (error) {
+        console.error("Fehler beim Aktualisieren nach Mailwechsel:", error);
         showStatus(error.message, "error");
     } finally {
         toggleLoading(false);
