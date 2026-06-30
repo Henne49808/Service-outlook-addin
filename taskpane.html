@@ -13,11 +13,26 @@
             margin: 0; padding: 0; box-sizing: border-box;
             display: flex; flex-direction: column; height: 100vh;
         }
-        #addin-header {
-            background-color: #ffffff; padding: 16px;
+       #addin-header {
+            background-color: #ffffff;
+            padding: 16px;
             border-bottom: 1px solid #edebe9;
-            display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
         }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+#addin-version {
+    font-size: 11px;
+    color: #8a8886;
+    white-space: nowrap;
+}
         #addin-header img.logo { height: 42px; width: auto; }
         #addin-header h1.title { font-size: 16px; font-weight: 600; color: #323130; margin: 0; }
         #main-content { padding: 16px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; flex-grow: 1; }
@@ -217,12 +232,21 @@
         .ticket-right{min-width:160px!important;padding-left:14px!important}
         .ticket-right *{font-size:12px!important}
         .priority{white-space:nowrap!important;display:inline-block}
+        #addin-version {
+            margin-top: 10px;
+            text-align: right;
+            font-size: 11px;
+            color: #8a8886;
+        }
     </style>
 </head>
 <body>
     <header id="addin-header">
-        <img src="hedelius_logo.png" alt="Hedelius Logo" class="logo">
-        <h1 class="title">Hedelius Service</h1>
+        <div class="header-left">
+            <img src="hedelius_logo.png" alt="Hedelius Logo" class="logo">
+            <h1 class="title">Hedelius Service</h1>
+        </div>
+        <div id="addin-version"></div>
     </header>
 
     <div id="main-content">
