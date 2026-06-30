@@ -23,7 +23,7 @@ const D365_CONFIG = {
     sapTransferReadyFormattedText: "übergabefähig"
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.03";
+const ADDIN_BUILD   = "20260701.04";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
@@ -1365,6 +1365,15 @@ function handleFreeButton() {
 
 async function handleCloseTicket() {
     hideStatus();
+
+    const confirmed = window.confirm(
+        "Soll dieses Ticket wirklich abgeschlossen werden?\n\nDieser Vorgang kann nicht ohne Weiteres rückgängig gemacht werden."
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
     toggleLoading(true);
 
     try {
@@ -1373,7 +1382,6 @@ async function handleCloseTicket() {
         }
 
         const token = await getDynamicsAccessToken();
-
         const url = `${D365_CONFIG.apiEndpoint}/CloseIncident`;
 
         const payload = {
