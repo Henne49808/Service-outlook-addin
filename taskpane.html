@@ -95,7 +95,22 @@
         select { width: 100%; padding: 6px 8px; border: 1px solid #a19f9d; border-radius: 2px; box-sizing: border-box; font-family: inherit; margin-top: 4px; background: #fff; }
         .description-box { margin-top: 8px; }
         .description-edit { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #d0d0d0; border-radius: 2px; background: #fafafa; min-height: 120px; max-height: 280px; overflow-y: auto; line-height: 1.45; resize: vertical; font-family: inherit; }
-        
+
+		.readonly-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    border: 1px solid #d0d0d0;
+    border-radius: 2px;
+    background: #fafafa;
+    min-height: 180px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #323130;
+}
+		
         /* OBERER BEREICH: Optimierter & verkleinerter Header-Karten-Container */
         .ticket-header-card {
             display: grid;
@@ -309,9 +324,22 @@
                     <button id="btn-free" class="btn btn-secondary" type="button">Frei</button>
                 </div>
                 <button id="btn-close-ticket" class="btn btn-secondary btn-danger-text" type="button">Ticket als erledigt markieren</button>
-            </div>
-        </div>
+			</div>
+			<div id="section-kieingangsdaten" class="section">
+    <h2>Eingangsdaten</h2>
+
+    <div class="field-group">
+        <div class="field-label">Meldungsbezugstypgrund</div>
+        <textarea id="kie-meldungsbezugstypgrund" class="readonly-textarea" rows="10" readonly></textarea>
     </div>
-	<script src="taskpane.js?v=20260701.09"></script>
+
+    <div class="field-group">
+        <div class="field-label">Hinweis Maschinenauswahl</div>
+        <textarea id="kie-hinweismaschinenauswahl" class="readonly-textarea" rows="10" readonly></textarea>
+    </div>
+			</div>
+        </div>
+	</div>
+	<script src="taskpane.js?v=20260701.09"taskpane.js?v=20260701.09"></script>
 </body>
 </html>
