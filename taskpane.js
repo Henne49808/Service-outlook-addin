@@ -141,13 +141,23 @@ async function reloadCurrentMail(options = {}) {
 }
 
 function registerItemChangedHandler() {
+    if (currentState.itemChangedHandlerInitialized) return;
+
     if (
         Office.context.mailbox &&
         Office.context.mailbox.addHandlerAsync
     ) {
         Office.context.mailbox.addHandlerAsync(
             Office.EventType.ItemChanged,
-            handleItemChanged
+            handleItemChanged,
+            function (result) {
+                if (result.status === Office.AsyncResultStatus.Succeeded) {
+                    currentState.itemChangedHandlerInitialized = true;
+                    console.log("ItemChanged-Handler registriert.");
+                } else {
+                    console.warn("ItemChanged-Handler konnte nicht registriert werden:", result.error);
+                }
+            }
         );
     }
 }
@@ -788,19 +798,15 @@ function appendInputField(container, field, initialValue = "", originalValue = "
 input.id = `input-${field.logicalName}`;
 input.dataset.logicalName = field.logicalName;
 
-// NONAME gilt im Eingabefeld als leer, obwohl das Lookup technisch gesetzt ist.
-if (field.logicalName === "_customerid_value") {
-    const currentCustomerName = getLookupDisplayValue("_customerid_value");
+const isNonameCustomer =
+    field.logicalName === "_customerid_value" &&
+    isEmptyCustomerName(getLookupDisplayValue("_customerid_value"));
 
-    if (isEmptyCustomerName(currentCustomerName)) {
-        input.value = "";
-        input.dataset.lookupId = "";
-        input.dataset.originalLookupId = "";
-    }
-}
-    input.dataset.originalValue = String(originalValue ?? "");
-    input.dataset.trackChange = "true";
-    input.value = String(initialValue ?? "");
+const effectiveInitialValue = isNonameCustomer ? "" : String(initialValue ?? "");
+
+input.dataset.originalValue = effectiveInitialValue;
+input.dataset.trackChange = "true";
+input.value = effectiveInitialValue;
 
     if (field.type === "choice" && String(initialValue ?? "") && input.value !== String(initialValue ?? "")) {
         const fallbackOption = document.createElement("option");
@@ -814,9 +820,12 @@ if (field.logicalName === "_customerid_value") {
     input.addEventListener("change", updateSaveButtonVisibility);
 
     if (field.type === "lookup") {
-        const currentId = currentState.incidentData?.[field.logicalName] || "";
-        input.dataset.lookupId = currentId;
-        input.dataset.originalLookupId = currentId;
+        const currentId = isNonameCustomer
+    ? ""
+    : currentState.incidentData?.[field.logicalName] || "";
+
+input.dataset.lookupId = currentId;
+input.dataset.originalLookupId = currentId;
         input.dataset.lookupDisplay = String(initialValue ?? "");
 
         const dropdown = document.createElement("div");
