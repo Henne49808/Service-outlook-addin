@@ -29,7 +29,12 @@ let currentState = {
     incidentData: {},
     emailData: {},
     internetMessageId: null,
+
     handlersInitialized: false,
+    itemChangedHandlerInitialized: false,
+    itemChangeInProgress: false,
+    lastLoadedInternetMessageId: null,
+
     formBaseline: null
 };
 
@@ -66,13 +71,72 @@ async function initAddIn() {
             return;
         }
 
-        await loadAndRender();
-        registerItemChangedHandler();
+        await reloadCurrentMail({ force: true });
+        registerItemChangedHandler();;
     } catch (error) {
         console.error("Initialisierung fehlgeschlagen:", error);
         showStatus(error.message, "error");
     } finally {
         toggleLoading(false);
+    }
+}
+
+async function reloadCurrentMail(options = {}) {
+    const {
+        force = false,
+        showLoading = true,
+        clearStatus = true
+    } = options;
+
+    if (currentState.itemChangeInProgress) {
+        console.log("Reload ignoriert: Aktualisierung läuft bereits.");
+        return;
+    }
+
+    if (clearStatus) {
+        hideStatus();
+    }
+
+    if (showLoading) {
+        toggleLoading(true);
+    }
+
+    currentState.itemChangeInProgress = true;
+
+    try {
+        const item = Office.context.mailbox.item;
+
+        if (!item || !item.internetMessageId) {
+            throw new Error("Die ausgewählte E-Mail hat keine InternetMessageId.");
+        }
+
+        const newMessageId = item.internetMessageId;
+
+        if (
+            !force &&
+            currentState.lastLoadedInternetMessageId &&
+            currentState.lastLoadedInternetMessageId === newMessageId
+        ) {
+            console.log("Reload ignoriert: dieselbe E-Mail ist bereits geladen.");
+            return;
+        }
+
+        currentState.internetMessageId = newMessageId;
+        currentState.incidentId = null;
+        currentState.incidentData = {};
+        currentState.emailData = {};
+        currentState.formBaseline = null;
+
+        await loadAndRender();
+    } catch (error) {
+        console.error("Fehler beim Aktualisieren:", error);
+        showStatus(error.message, "error");
+    } finally {
+        currentState.itemChangeInProgress = false;
+
+        if (showLoading) {
+            toggleLoading(false);
+        }
     }
 }
 
@@ -89,35 +153,23 @@ function registerItemChangedHandler() {
 }
 
 async function handleItemChanged() {
-    hideStatus();
-    toggleLoading(true);
-
-    try {
-        const item = Office.context.mailbox.item;
-
-        if (!item || !item.internetMessageId) {
-            throw new Error("Die ausgewählte E-Mail hat keine InternetMessageId.");
-        }
-
-        currentState.internetMessageId = item.internetMessageId;
-        currentState.incidentId = null;
-        currentState.incidentData = {};
-        currentState.emailData = {};
-
-        await loadAndRender();
-    } catch (error) {
-        console.error("Fehler beim Aktualisieren nach Mailwechsel:", error);
-        showStatus(error.message, "error");
-    } finally {
-        toggleLoading(false);
-    }
+    await reloadCurrentMail({
+        force: false,
+        showLoading: true,
+        clearStatus: true
+    });
 }
 
 async function loadAndRender() {
     await fetchDynamicsData(currentState.internetMessageId);
+
+    currentState.lastLoadedInternetMessageId =
+        currentState.internetMessageId;
+
     await ensureChoiceOptionsLoaded();
     renderUI();
     setupEventHandlers();
+
     document.getElementById("app-container").classList.remove("hidden");
 }
 
@@ -217,10 +269,11 @@ function showLoginButton() {
                         toggleLoading(true);
 
                         try {
-                            await loadAndRender();
-                        } catch (err) {
-                            showStatus(err.message, "error");
-                        } finally {
+    await reloadCurrentMail({ force: true });
+    registerItemChangedHandler();
+} catch (err) {
+    showStatus(err.message, "error");
+} finally {
                             toggleLoading(false);
                             btn.disabled = false;
                             btn.innerText = "Bei Hedelius anmelden";
@@ -1054,8 +1107,11 @@ showStatus("Eingaben erfolgreich gespeichert. Daten werden aktualisiert...", "su
 // den Incident zu aktualisieren.
 await sleep(6000);
 
-await fetchDynamicsData(currentState.internetMessageId);
-renderUI();
+await reloadCurrentMail({
+    force: true,
+    showLoading: false,
+    clearStatus: false
+});
 
 showStatus("Daten wurden aktualisiert.", "success");
     } catch (err) {
