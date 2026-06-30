@@ -28,6 +28,7 @@ let currentState = {
     incidentId: null,
     incidentData: {},
     emailData: {},
+    eingangsdatenData: {},
     internetMessageId: null,
 
     handlersInitialized: false,
@@ -420,13 +421,33 @@ async function fetchDynamicsData(messageId) {
     }
 
     const incidentUrl = buildDataverseUrl(`incidents(${regardingId})`, {
-        "$select": "incidentid,ticketnumber,title,con_maschinennummer,description,prioritycode,con_sapid,con_sapbesitzer,hed_sapsyncstatus,_customerid_value,_msa_partnercontactid_value,statecode,statuscode,createdon,modifiedon"
+        "$select": "incidentid,ticketnumber,title,con_maschinennummer,description,prioritycode,con_sapid,con_sapbesitzer,hed_sapsyncstatus,_customerid_value,_msa_partnercontactid_value,_hed_kieingangsdaten_value,statecode,statuscode,createdon,modifiedon"
     });
 
     const incident = await fetchJsonOrThrow(incidentUrl, { method: "GET", headers }, "Dynamics-Incident-Abfrage");
 
     currentState.incidentId = incident.incidentid;
     currentState.incidentData = incident;
+    const eingangsdatenId = incident._hed_hedsvkieingangsdaten_value;
+
+currentState.eingangsdatenData = await fetchEingangsdaten(eingangsdatenId);
+}
+
+async function fetchEingangsdaten(eingangsdatenId) {
+    if (!eingangsdatenId) return null;
+
+    const token = await getDynamicsAccessToken();
+    const headers = getDataverseHeaders(token);
+
+    const url = buildDataverseUrl(`hed_hedsvkieingangsdaten(${eingangsdatenId})`, {
+        "$select": "hed_meldungsbezugstyp"
+    });
+
+    return await fetchJsonOrThrow(
+        url,
+        { method: "GET", headers },
+        "Dynamics-Eingangsdaten-Abfrage"
+    );
 }
 
 async function ensureChoiceOptionsLoaded() {
@@ -653,7 +674,10 @@ function renderTicketHeader(container) {
     const status = getFieldValue("statuscode") || getFieldValue("statecode") || "-";
     const createdOn = formatDateTimeValue(inc.createdon);
     const modifiedOn = formatDateTimeValue(inc.modifiedon);
-
+    const meldungsbezugstyp =
+    currentState.eingangsdatenData?.[
+        "hed_meldungsbezugstyp@OData.Community.Display.V1.FormattedValue"
+    ] || "-";
     const wrapper = document.createElement("div");
     wrapper.className = "ticket-header-card";
 
@@ -686,7 +710,15 @@ function renderTicketHeader(container) {
     statusText.textContent = String(status);
 
     statusBadge.append(dot, statusText);
-    main.append(titleMain, subtitle, statusBadge);
+    const bezugstyp = document.createElement("div");
+    bezugstyp.className = "ticket-subtitle";
+    bezugstyp.textContent = meldungsbezugstyp;
+    main.append(
+    titleMain,
+    subtitle,
+    bezugstyp,
+    statusBadge
+);
     left.append(icon, main);
 
     const right = document.createElement("div");
