@@ -435,7 +435,7 @@ currentState.eingangsdatenData = await fetchEingangsdaten(eingangsdatenId);
 }
 
 async function fetchEingangsdaten(eingangsdatenId) {
-    if (!eingangsdatenId) return null;
+    if (!eingangsdatenId) return {};
 
     const token = await getDynamicsAccessToken();
     const headers = getDataverseHeaders(token);
@@ -443,6 +443,10 @@ async function fetchEingangsdaten(eingangsdatenId) {
     const url = buildDataverseUrl(`hed_hedsvkieingangsdatens(${eingangsdatenId})`, {
         "$select": "hed_meldungsbezugstyp"
     });
+
+    console.log("AKTIVE fetchEingangsdaten-Version: 20260701-TEST");
+    console.log("EingangsdatenId:", eingangsdatenId);
+    console.log("Eingangsdaten URL:", url);
 
     return await fetchJsonOrThrow(
         url,
