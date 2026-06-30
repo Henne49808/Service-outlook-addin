@@ -23,7 +23,7 @@ const D365_CONFIG = {
     sapTransferReadyFormattedText: "übergabefähig"
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.06";
+const ADDIN_BUILD   = "20260701.07";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
@@ -1453,26 +1453,35 @@ function sleep(ms) {
 
 function showConfirmationDialog(title, message) {
     return new Promise(resolve => {
-        const url =
-            "https://henne49808.github.io/Service-outlook-addin/confirm.html" +
-            `?title=${encodeURIComponent(title)}` +
-            `&message=${encodeURIComponent(message)}`;
+        const url = new URL("confirm.html", window.location.href);
+        url.searchParams.set("title", title);
+        url.searchParams.set("message", message);
+
+        console.log("Bestätigungsdialog URL:", url.toString());
 
         Office.context.ui.displayDialogAsync(
-            url,
+            url.toString(),
             { height: 35, width: 35, displayInIframe: false },
             result => {
                 if (result.status !== Office.AsyncResultStatus.Succeeded) {
-                    showStatus("Bestätigungsdialog konnte nicht geöffnet werden.", "error");
+                    showStatus(
+                        "Bestätigungsdialog konnte nicht geöffnet werden: " +
+                        (result.error?.message || "Unbekannter Fehler."),
+                        "error"
+                    );
                     resolve(false);
                     return;
                 }
 
                 const dialog = result.value;
+                let resolved = false;
 
                 dialog.addEventHandler(
                     Office.EventType.DialogMessageReceived,
                     arg => {
+                        if (resolved) return;
+                        resolved = true;
+
                         dialog.close();
 
                         try {
@@ -1486,13 +1495,16 @@ function showConfirmationDialog(title, message) {
 
                 dialog.addEventHandler(
                     Office.EventType.DialogEventReceived,
-                    () => resolve(false)
+                    () => {
+                        if (resolved) return;
+                        resolved = true;
+                        resolve(false);
+                    }
                 );
             }
         );
     });
 }
-
 function renderAddInVersion() {
     const el = document.getElementById("addin-version");
     if (!el) return;
