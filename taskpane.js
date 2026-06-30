@@ -23,7 +23,7 @@ const D365_CONFIG = {
     sapTransferReadyFormattedText: "übergabefähig"
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD = "20260701.02";
+const ADDIN_BUILD   = "20260701.02";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
@@ -42,10 +42,11 @@ let currentState = {
 
 // 2. ADD-IN START
 Office.onReady(function (info) {
+
     renderAddInVersion();
 
     console.log(
-        `Hedelius Outlook Add-In Version ${ADDIN_VERSION}, Build ${ADDIN_BUILD}. Host:`,
+        `Hedelius Outlook Add-In Version ${ADDIN_VERSION}, Build ${ADDIN_BUILD}`,
         info.host
     );
 
