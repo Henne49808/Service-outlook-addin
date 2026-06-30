@@ -440,7 +440,7 @@ async function fetchEingangsdaten(eingangsdatenId) {
     const token = await getDynamicsAccessToken();
     const headers = getDataverseHeaders(token);
 
-    const url = buildDataverseUrl(`hed_hedsvkieingangsdaten(${eingangsdatenId})`, {
+    const url = buildDataverseUrl(`hed_hedsvkieingangsdatens(${eingangsdatenId})`, {
         "$select": "hed_meldungsbezugstyp"
     });
 
