@@ -23,7 +23,7 @@ const D365_CONFIG = {
     sapTransferReadyFormattedText: "übergabefähig"
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.02";
+const ADDIN_BUILD   = "20260701.02"20260701.02"20260701.02"20260701.02"20260701.02"20260701.02"20260701.02"20260701.02"20260701.02"20260701.02"20260701.02"20260701.02"20260701.02"20260701.02";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
@@ -1012,7 +1012,15 @@ function evaluateActionButtonsLogic() {
 
     const syncStatusRaw = inc.hed_sapsyncstatus;
     const sapId = inc.con_sapid;
+    const stateCode = Number(inc.statecode);
+    const statusCode = Number(inc.statuscode);
 
+    // Ein Incident gilt als geschlossen, wenn statecode = 1 (Resolved)
+    // oder statecode = 2 (Canceled)
+    const isClosed =
+        stateCode === 1 ||
+        stateCode === 2;
+    
     const hasSapId =
         sapId !== undefined &&
         sapId !== null &&
@@ -1029,7 +1037,10 @@ function evaluateActionButtonsLogic() {
 
     document.getElementById("btn-sap-forward")
         .classList.toggle("hidden", !canForwardToSapOwner);
-
+    
+    document.getElementById("btn-close-ticket")
+    .classList.toggle("hidden", isClosed);
+    
     console.log("SAP-Button-Logik:", {
         hed_sapsyncstatus: syncStatusRaw,
         con_sapid: sapId,
