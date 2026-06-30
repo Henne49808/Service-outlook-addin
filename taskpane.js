@@ -1350,13 +1350,38 @@ async function handleCloseTicket() {
     toggleLoading(true);
 
     try {
-        // Hinweis: In vielen Dynamics-Umgebungen ist das saubere Schließen eines Incidents
-        // über die Action CloseIncident umzusetzen. Dieser PATCH bleibt bewusst erhalten,
-        // liefert aber jetzt den vollständigen Dataverse-Fehlertext, falls die Umgebung ihn ablehnt.
-        await updateIncidentEntity({ "statecode": 1, "statuscode": 5 });
-        showStatus("Vorfall erfolgreich geschlossen.", "success");
+        if (!currentState.incidentId) {
+            throw new Error("Kein Incident geladen. Ticket kann nicht abgeschlossen werden.");
+        }
+
+        const token = await getDynamicsAccessToken();
+
+        const url = `${D365_CONFIG.apiEndpoint}/CloseIncident`;
+
+        const payload = {
+            IncidentResolution: {
+                "subject": "Ticket abgeschlossen",
+                "incidentid@odata.bind": `/incidents(${currentState.incidentId})`
+            },
+            Status: 6
+        };
+
+        const response = await fetch(url, {
+            method: "POST",
+            headers: getDataverseHeaders(token, true),
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const details = await readDataverseError(response);
+            throw new Error(`CloseIncident fehlgeschlagen (HTTP ${response.status}): ${details}`);
+        }
+
+        showStatus("Ticket erfolgreich abgeschlossen.", "success");
+
         await fetchDynamicsData(currentState.internetMessageId);
         renderUI();
+
     } catch (err) {
         showStatus("Fehler beim Schließen: " + err.message, "error");
     } finally {
