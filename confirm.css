@@ -1,0 +1,46 @@
+body {
+    font-family: Segoe UI, Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: #ffffff;
+    color: #323130;
+}
+
+.dialog {
+    max-width: 360px;
+    margin: 0 auto;
+}
+
+h2 {
+    font-size: 18px;
+    margin-top: 0;
+}
+
+p {
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+button {
+    flex: 1;
+    padding: 8px 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#btn-yes {
+    background: #a80000;
+    color: white;
+    border: 1px solid #a80000;
+}
+
+#btn-no {
+    background: #f3f2f1;
+    border: 1px solid #8a8886;
+}
