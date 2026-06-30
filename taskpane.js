@@ -28,7 +28,7 @@ incidentCancelledStatus: 6,
 incidentClosedStatus: 281370004,
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.09";
+const ADDIN_BUILD   = "20260701.10";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
@@ -453,7 +453,7 @@ async function fetchEingangsdaten(eingangsdatenId) {
     const headers = getDataverseHeaders(token);
 
     const url = buildDataverseUrl(`hed_hedsvkieingangsdatens(${eingangsdatenId})`, {
-        "$select": "hed_meldungsbezugstyp"
+        "$select": "hed_meldungsbezugstyp,hed_meldungsbezugstypgrund,hed_hinweismaschinenauswahl"
     });
 
     console.log("AKTIVE fetchEingangsdaten-Version: 20260701-TEST");
@@ -559,7 +559,8 @@ function renderUI() {
     }
 
     renderDescriptionSection();
-    evaluateActionButtonsLogic();
+renderKieingangsdatenSection();
+evaluateActionButtonsLogic();
 
     // Nach dem Rendern einen stabilen Ausgangszustand speichern.
     // Das verhindert, dass programmatisch gesetzte Werte, Browser-Normalisierung
@@ -679,6 +680,31 @@ function renderDescriptionSection() {
     textarea.addEventListener("change", updateSaveButtonVisibility);
 
     el.appendChild(textarea);
+}
+
+function renderKieingangsdatenSection() {
+    const data = currentState.eingangsdatenData || {};
+
+    const meldungsbezugstypgrund =
+        data["hed_meldungsbezugstypgrund@OData.Community.Display.V1.FormattedValue"] ??
+        data.hed_meldungsbezugstypgrund ??
+        "";
+
+    const hinweisMaschinenauswahl =
+        data["hed_hinweismaschinenauswahl@OData.Community.Display.V1.FormattedValue"] ??
+        data.hed_hinweismaschinenauswahl ??
+        "";
+
+    const elGrund = document.getElementById("kie-meldungsbezugstypgrund");
+    const elHinweis = document.getElementById("kie-hinweismaschinenauswahl");
+
+    if (elGrund) {
+        elGrund.value = String(meldungsbezugstypgrund || "");
+    }
+
+    if (elHinweis) {
+        elHinweis.value = String(hinweisMaschinenauswahl || "");
+    }
 }
 
 function renderTicketHeader(container) {
