@@ -28,7 +28,7 @@ incidentCancelledStatus: 6,
 incidentClosedStatus: 281370004,
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.08"20260701.08"20260701.08"20260701.08";
+const ADDIN_BUILD   = "20260701.09";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
