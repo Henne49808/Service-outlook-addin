@@ -4,7 +4,7 @@
 
 // 1. DYNAMICS 365 KONFIGURATION
 const D365_CONFIG = {
-    apiEndpoint: "https://hedelius.api.crm4.dynamics.com/api/data/v9.2",
+    apiEndpoint: "https://dev-hedelius.api.crm4.dynamics.com/api/data/v9.2",
 
     // Pflichtinformationen für die Vollständigkeitsprüfung in Block 2A/2B.
     requiredFields: [
