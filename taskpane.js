@@ -23,7 +23,7 @@ const D365_CONFIG = {
     sapTransferReadyFormattedText: "übergabefähig"
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.04";
+const ADDIN_BUILD   = "20260701.05";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
