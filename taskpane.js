@@ -28,7 +28,7 @@ incidentCancelledStatus: 6,
 incidentClosedStatus: 281370004,
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.12";
+const ADDIN_BUILD   = "20260701.12"20260701.12"20260701.12";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
@@ -736,12 +736,20 @@ function renderTicketHeader(container) {
     main.className = "ticket-header-main";
 
     const titleMain = document.createElement("div");
-    titleMain.className = "ticket-title-main";
-    titleMain.textContent = `Ticket ${ticketNumber}`;
+titleMain.className = "ticket-title-main";
+titleMain.textContent = `Ticket ${ticketNumber}`;
 
-    const subtitle = document.createElement("div");
-    subtitle.className = "ticket-subtitle";
-    subtitle.textContent = String(title || machineNumber || "-");
+const sapId = getFieldValue("con_sapid");
+
+const sapLine = document.createElement("div");
+sapLine.className = "ticket-title-main ticket-title-secondary";
+sapLine.textContent = sapId
+    ? `SAP: ${sapId}`
+    : "SAP: -";
+
+const subtitle = document.createElement("div");
+subtitle.className = "ticket-subtitle";
+subtitle.textContent = String(title || machineNumber || "-");
 
     const statusBadge = document.createElement("div");
     statusBadge.className = "ticket-status-badge";
@@ -758,6 +766,7 @@ function renderTicketHeader(container) {
     bezugstyp.textContent = meldungsbezugstyp;
     main.append(
     titleMain,
+    sapLine,
     subtitle,
     bezugstyp,
     statusBadge
