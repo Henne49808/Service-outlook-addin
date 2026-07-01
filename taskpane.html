@@ -9,11 +9,18 @@
     <style>
         body {
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-            font-size: 14px; color: #323130; background-color: #faf9f8;
-            margin: 0; padding: 0; box-sizing: border-box;
-            display: flex; flex-direction: column; height: 100vh;
+            font-size: 14px;
+            color: #323130;
+            background-color: #faf9f8;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
         }
-       #addin-header {
+        
+        #addin-header {
             background-color: #ffffff;
             padding: 16px;
             border-bottom: 1px solid #edebe9;
@@ -22,32 +29,120 @@
             justify-content: space-between;
             flex-shrink: 0;
         }
+        
         .header-left {
             display: flex;
             align-items: center;
             gap: 12px;
         }
 
-#addin-version {
-    font-size: 11px;
-    color: #8a8886;
-    white-space: nowrap;
-}
-        #addin-header img.logo { height: 42px; width: auto; }
-        #addin-header h1.title { font-size: 16px; font-weight: 600; color: #323130; margin: 0; }
-        #main-content { padding: 16px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; flex-grow: 1; }
-        h2 { font-size: 15px; font-weight: 600; color: #0078d4; margin: 0 0 8px 0; border-bottom: 1px solid #edebe9; padding-bottom: 4px; }
-        .section { background: #ffffff; border-radius: 2px; padding: 12px; box-shadow: 0 1.6px 3.6px 0 rgba(0,0,0,0.132), 0 0.3px 0.9px 0 rgba(0,0,0,0.108); }
-        .field-group { margin-bottom: 10px; }
-        .field-label { font-size: 11px; font-weight: 600; color: #605e5c; text-transform: uppercase; }
-        .field-value { font-size: 13px; color: #323130; margin-top: 2px; word-break: break-word; }
-        input[type="text"], textarea { width: 100%; padding: 6px 8px; border: 1px solid #a19f9d; border-radius: 2px; box-sizing: border-box; font-family: inherit; margin-top: 4px; }
-        .btn { display: block; width: 100%; padding: 8px 16px; margin-bottom: 8px; border-radius: 2px; border: 1px solid transparent; font-weight: 600; cursor: pointer; text-align: center; font-size: 13px; }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-primary { background-color: #0078d4; color: #ffffff; }
-        .btn-primary:hover:not(:disabled) { background-color: #106ebe; }
-        .btn-secondary {    background-color: #f3f2f1;    color: #323130;    border-color: #8a8886;}
-        .btn-secondary:hover:not(:disabled) {    background-color: #edebe9;}
+        #addin-version {
+            font-size: 11px;
+            color: #8a8886;
+            white-space: nowrap;
+        }
+        
+        #addin-header img.logo {
+            height: 42px;
+            width: auto;
+        }
+        
+        #addin-header h1.title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #323130;
+            margin: 0;
+        }
+        
+        #main-content {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        
+        h2 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #0078d4;
+            margin: 0 0 8px 0;
+            border-bottom: 1px solid #edebe9;
+            padding-bottom: 4px;
+        }
+        
+        .section {
+            background: #ffffff;
+            border-radius: 2px;
+            padding: 12px;
+            box-shadow: 0 1.6px 3.6px 0 rgba(0,0,0,0.132), 0 0.3px 0.9px 0 rgba(0,0,0,0.108);
+        }
+        
+        .field-group {
+            margin-bottom: 10px;
+        }
+        
+        .field-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #605e5c;
+            text-transform: uppercase;
+        }
+        
+        .field-value {
+            font-size: 13px;
+            color: #323130;
+            margin-top: 2px;
+            word-break: break-word;
+        }
+        
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #a19f9d;
+            border-radius: 2px;
+            box-sizing: border-box;
+            font-family: inherit;
+            margin-top: 4px;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 8px 16px;
+            margin-bottom: 8px;
+            border-radius: 2px;
+            border: 1px solid transparent;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            font-size: 13px;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background-color: #0078d4;
+            color: #ffffff;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background-color: #106ebe;
+        }
+        
+        .btn-secondary {
+            background-color: #f3f2f1;
+            color: #323130;
+            border-color: #8a8886;
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #edebe9;
+        }
 
         /* Ticket abschließen */
         .btn-danger-text {
@@ -68,49 +163,157 @@
             border-color: #107c41;
             box-shadow: 0 1px 3px rgba(16, 124, 65, 0.35);
         }
+        
         #btn-save-complete:hover:not(:disabled) {
             background-color: #0b6a35;
             border-color: #0b6a35;
         }
-        .button-row { display: flex; gap: 8px; margin-bottom: 8px; }
-        .button-row .btn { flex: 1; margin-bottom: 0; }
-        .hidden { display: none !important; }
-        #status-message { padding: 10px; border-radius: 2px; font-weight: 500; margin-bottom: 10px; }
-        .status-error { background-color: #fde7e9; color: #a80000; border-left: 4px solid #a80000; }
-        .status-success { background-color: #dff6dd; color: #107c41; border-left: 4px solid #107c41; }
-        .loader { border: 3px solid #f3f2f1; border-top: 3px solid #0078d4; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .button-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .button-row .btn {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        #status-message {
+            padding: 10px;
+            border-radius: 2px;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        
+        .status-error {
+            background-color: #fde7e9;
+            color: #a80000;
+            border-left: 4px solid #a80000;
+        }
+        
+        .status-success {
+            background-color: #dff6dd;
+            color: #107c41;
+            border-left: 4px solid #107c41;
+        }
+        
+        .loader {
+            border: 3px solid #f3f2f1;
+            border-top: 3px solid #0078d4;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
         /* Login-Bereich */
-        #login-container { text-align: center; padding: 24px 16px; }
-        #login-container p { color: #605e5c; font-size: 13px; margin-bottom: 16px; }
-        #login-link-container { margin-top: 12px; font-size: 12px; color: #605e5c; }
-        #login-link-container a { color: #0078d4; }
+        #login-container {
+            text-align: center;
+            padding: 24px 16px;
+        }
+        
+        #login-container p {
+            color: #605e5c;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+        
+        #login-link-container {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #605e5c;
+        }
+        
+        #login-link-container a {
+            color: #0078d4;
+        }
 
-        .readonly-row { display: grid; grid-template-columns: 42% 58%; gap: 8px; padding: 6px 0; border-bottom: 1px solid #edebe9; }
-        .readonly-row:last-child { border-bottom: 0; }
-        .readonly-label { font-size: 12px; font-weight: 600; color: #605e5c; }
-        .readonly-value { font-size: 13px; color: #323130; word-break: break-word; }
-        .required-marker { color: #a80000; margin-left: 3px; }
-        select { width: 100%; padding: 6px 8px; border: 1px solid #a19f9d; border-radius: 2px; box-sizing: border-box; font-family: inherit; margin-top: 4px; background: #fff; }
-        .description-box { margin-top: 8px; }
-        .description-edit { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #d0d0d0; border-radius: 2px; background: #fafafa; min-height: 120px; max-height: 280px; overflow-y: auto; line-height: 1.45; resize: vertical; font-family: inherit; }
+        .readonly-row {
+            display: grid;
+            grid-template-columns: 42% 58%;
+            gap: 8px;
+            padding: 6px 0;
+            border-bottom: 1px solid #edebe9;
+        }
+        
+        .readonly-row:last-child {
+            border-bottom: 0;
+        }
+        
+        .readonly-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #605e5c;
+        }
+        
+        .readonly-value {
+            font-size: 13px;
+            color: #323130;
+            word-break: break-word;
+        }
+        
+        .required-marker {
+            color: #a80000;
+            margin-left: 3px;
+        }
+        
+        select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #a19f9d;
+            border-radius: 2px;
+            box-sizing: border-box;
+            font-family: inherit;
+            margin-top: 4px;
+            background: #fff;
+        }
+        
+        .description-box {
+            margin-top: 8px;
+        }
+        
+        .description-edit {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #d0d0d0;
+            border-radius: 2px;
+            background: #fafafa;
+            min-height: 120px;
+            max-height: 280px;
+            overflow-y: auto;
+            line-height: 1.45;
+            resize: vertical;
+            font-family: inherit;
+        }
 
-		.readonly-textarea {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 10px;
-    border: 1px solid #d0d0d0;
-    border-radius: 2px;
-    background: #fafafa;
-    min-height: 180px;
-    resize: vertical;
-    font-family: inherit;
-    font-size: 13px;
-    line-height: 1.45;
-    color: #323130;
-}
-		
+        .readonly-textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #d0d0d0;
+            border-radius: 2px;
+            background: #fafafa;
+            min-height: 180px;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 13px;
+            line-height: 1.45;
+            color: #323130;
+        }
+        
         /* OBERER BEREICH: Optimierter & verkleinerter Header-Karten-Container */
         .ticket-header-card {
             display: grid;
@@ -122,12 +325,14 @@
             background: #ffffff;
             box-shadow: 0 1px 2px rgba(0,0,0,0.06);
         }
+        
         .ticket-header-left {
             display: flex;
             gap: 10px;
             align-items: flex-start;
             min-width: 0;
         }
+        
         .ticket-header-icon {
             width: 36px; /* Leicht verkleinert (vorher 42px) */
             height: 36px;
@@ -140,7 +345,10 @@
             font-size: 18px;
             flex-shrink: 0;
         }
-        .ticket-header-main { min-width: 0; }
+        
+        .ticket-header-main {
+            min-width: 0;
+        }
         
         /* Überschrift verkleinert und dezenter gestaltet */
         .ticket-title-main {
@@ -150,12 +358,14 @@
             margin: 0 0 4px 0;
             word-break: break-word;
         }
+        
         .ticket-subtitle {
             font-size: 12px; /* Leicht verkleinert (vorher 13px) */
             color: #605e5c;
             margin-bottom: 6px;
             word-break: break-word;
         }
+        
         .ticket-status-badge {
             display: inline-flex;
             align-items: center;
@@ -167,6 +377,7 @@
             border-radius: 999px;
             font-size: 11px;
         }
+        
         .ticket-status-dot {
             width: 5px;
             height: 5px;
@@ -185,18 +396,21 @@
             justify-content: center; /* Zentriert die Inhalte vertikal */
             flex-shrink: 0;
         }
+        
         .ticket-side-label {
             font-size: 11px;
             color: #605e5c;
             margin-bottom: 2px;
             white-space: nowrap; /* Verhindert das Umbrechen des Labels */
         }
+        
         .ticket-side-value {
             font-size: 12px;
             color: #201f1e;
             word-break: keep-all; /* Behält Wörter zusammen */
             white-space: nowrap;  /* Priorität wird zwingend einzeilig gehalten */
         }
+        
         .ticket-priority-badge {
             display: inline-block;
             background: #fff4ce;
@@ -207,7 +421,10 @@
             white-space: nowrap; /* Absoluter Umbruchschutz für das Badge */
         }
 
-        .lookup-field-group { position: relative; }
+        .lookup-field-group {
+            position: relative;
+        }
+        
         .lookup-dropdown {
             position: absolute;
             z-index: 1000;
@@ -221,6 +438,7 @@
             max-height: 220px;
             overflow-y: auto;
         }
+        
         .lookup-result {
             display: block;
             width: 100%;
@@ -231,10 +449,30 @@
             cursor: pointer;
             font-family: inherit;
         }
-        .lookup-result:hover { background: #f3f2f1; }
-        .lookup-result-main { display: block; color: #201f1e; font-size: 13px; }
-        .lookup-result-sub { display: block; color: #605e5c; font-size: 12px; margin-top: 2px; }
-        .lookup-empty { padding: 8px 9px; color: #605e5c; font-size: 12px; }
+        
+        .lookup-result:hover {
+            background: #f3f2f1;
+        }
+        
+        .lookup-result-main {
+            display: block;
+            color: #201f1e;
+            font-size: 13px;
+        }
+        
+        .lookup-result-sub {
+            display: block;
+            color: #605e5c;
+            font-size: 12px;
+            margin-top: 2px;
+        }
+        
+        .lookup-empty {
+            padding: 8px 9px;
+            color: #605e5c;
+            font-size: 12px;
+        }
+        
         .lookup-clear {
             margin-top: 4px;
             border: 0;
@@ -252,13 +490,14 @@
         }
         
         /* Bereits vorhandene Overrides am Ende der Datei wurden für Konsistenz mit angepasst */
-        .ticket-header{padding:10px 12px!important;gap:14px!important}
-        .ticket-title{font-size:15px!important;font-weight:600!important}
-        .ticket-sub{font-size:12px!important}
-        .ticket-badge{font-size:11px!important;padding:2px 8px!important}
-        .ticket-right{min-width:160px!important;padding-left:14px!important}
-        .ticket-right *{font-size:12px!important}
-        .priority{white-space:nowrap!important;display:inline-block}
+        .ticket-header { padding: 10px 12px !important; gap: 14px !important; }
+        .ticket-title { font-size: 15px !important; font-weight: 600 !important; }
+        .ticket-sub { font-size: 12px !important; }
+        .ticket-badge { font-size: 11px !important; padding: 2px 8px !important; }
+        .ticket-right { min-width: 160px !important; padding-left: 14px !important; }
+        .ticket-right * { font-size: 12px !important; }
+        .priority { white-space: nowrap !important; display: inline-block; }
+        
         #addin-version {
             margin-top: 10px;
             text-align: right;
@@ -277,7 +516,9 @@
     </header>
 
     <div id="main-content">
-        <div id="status-container" class="hidden"><div id="status-message"></div></div>
+        <div id="status-container" class="hidden">
+            <div id="status-message"></div>
+        </div>
 
         <div id="loading-state" class="hidden">
             <div class="loader"></div>
@@ -296,7 +537,7 @@
         <div id="app-container" class="hidden">
             <div id="section-filled" class="section">
                 <div id="filled-fields-container"></div>
-			</div>
+            </div>
 
             <div id="section-missing" class="section hidden">
                 <h2>Fehlende Werte</h2>
@@ -324,22 +565,24 @@
                     <button id="btn-free" class="btn btn-secondary" type="button">Frei</button>
                 </div>
                 <button id="btn-close-ticket" class="btn btn-secondary btn-danger-text" type="button">Ticket als erledigt markieren</button>
-			</div>
-			<div id="section-kieingangsdaten" class="section">
-    <h2>Eingangsdaten</h2>
+            </div>
+            
+            <div id="section-kieingangsdaten" class="section">
+                <h2>Eingangsdaten</h2>
 
-    <div class="field-group">
-        <div class="field-label">Meldungsbezugstypgrund</div>
-        <textarea id="kie-meldungsbezugstypgrund" class="readonly-textarea" rows="10" readonly></textarea>
-	</div>
+                <div class="field-group">
+                    <div class="field-label">Meldungsbezugstypgrund</div>
+                    <textarea id="kie-meldungsbezugstypgrund" class="readonly-textarea" rows="10" readonly></textarea>
+                </div>
 
-    <div class="field-group">
-        <div class="field-label">Hinweis Maschinenauswahl</div>
-        <textarea id="kie-hinweismaschinenauswahl" class="readonly-textarea" rows="10" readonly></textarea>
-	</div>
-			</div>
-		</div>
-	</div>
-	<script src="taskpane.js?v=20260701.10"></script>
-	</body>
+                <div class="field-group">
+                    <div class="field-label">Hinweis Maschinenauswahl</div>
+                    <textarea id="kie-hinweismaschinenauswahl" class="readonly-textarea" rows="10" readonly></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="taskpane.js?v=20260701.11"></script>
+</body>
 </html>
