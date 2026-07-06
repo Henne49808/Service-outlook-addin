@@ -26,9 +26,12 @@ sapTransferReadyFormattedText: "übergabefähig",
 // Incident abschließen / stornieren
 incidentCancelledStatus: 6,
 incidentClosedStatus: 281370004,
+
+// SAP-Weiterleitung
+sapForwardTargetStatusValue: 281370007,
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.13";
+const ADDIN_BUILD   = "20260701.13"20260701.13";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
@@ -1356,23 +1359,34 @@ async function handleSapTransfer() {
     }
 }
 
-function handleSapForward() {
-    const sapOwner = currentState.incidentData?.con_sapbesitzer?.trim();
-    if (!sapOwner) {
-        showStatus("Kein SAP-Besitzer mit E-Mail-Adresse vorhanden.", "error");
-        return;
+async function handleSapForward() {
+    hideStatus();
+    toggleLoading(true);
+
+    try {
+        if (!currentState.incidentId) {
+            throw new Error("Kein Incident geladen. Weiterleitung ist nicht möglich.");
+        }
+
+        await updateIncidentEntity({
+            hed_sapsyncstatus: D365_CONFIG.sapForwardTargetStatusValue
+        });
+
+        showStatus("Weiterleitung wird durchgeführt.", "success");
+
+        await sleep(6000);
+
+        await reloadCurrentMail({
+            force: true,
+            showLoading: false,
+            clearStatus: false
+        });
+
+    } catch (err) {
+        showStatus("Fehler bei Weiterleitung: " + err.message, "error");
+    } finally {
+        toggleLoading(false);
     }
-
-    const ticketNumber = getFieldValue("ticketnumber") || "";
-    const title = getFieldValue("title") || "";
-
-    Office.context.mailbox.displayNewMessageForm({
-        toRecipients: [sapOwner],
-        subject: `SAP-Übernahme ${ticketNumber} ${title}`.trim(),
-        htmlBody: `<p>Bitte die folgende Serviceanfrage prüfen und in SAP übernehmen.</p>
-                   <p><strong>Ticket:</strong> ${escapeHtml(ticketNumber)}<br>
-                   <strong>Titel:</strong> ${escapeHtml(title)}</p>`
-    });
 }
 
 
