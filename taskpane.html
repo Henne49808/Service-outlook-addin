@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hedelius Outlook Add-In</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js" type="text/javascript"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            font-size: 14px;
+            color: #323130;
+            background-color: #faf9f8;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        #addin-header {
+            background-color: #ffffff;
+            padding: 16px;
+            border-bottom: 1px solid #edebe9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #addin-version {
+            font-size: 11px;
+            color: #8a8886;
+            white-space: nowrap;
+        }
+        
+        #addin-header img.logo {
+            height: 42px;
+            width: auto;
+        }
+        
+        #addin-header h1.title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #323130;
+            margin: 0;
+        }
+        
+        #main-content {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        
+        h2 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #0078d4;
+            margin: 0 0 8px 0;
+            border-bottom: 1px solid #edebe9;
+            padding-bottom: 4px;
+        }
+        
+        .section {
+            background: #ffffff;
+            border-radius: 2px;
+            padding: 12px;
+            box-shadow: 0 1.6px 3.6px 0 rgba(0,0,0,0.132), 0 0.3px 0.9px 0 rgba(0,0,0,0.108);
+        }
+        
+        .field-group {
+            margin-bottom: 10px;
+        }
+        
+        .field-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #605e5c;
+            text-transform: uppercase;
+        }
+        
+        .field-value {
+            font-size: 13px;
+            color: #323130;
+            margin-top: 2px;
+            word-break: break-word;
+        }
+        
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #a19f9d;
+            border-radius: 2px;
+            box-sizing: border-box;
+            font-family: inherit;
+            margin-top: 4px;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 8px 16px;
+            margin-bottom: 8px;
+            border-radius: 2px;
+            border: 1px solid transparent;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            font-size: 13px;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background-color: #0078d4;
+            color: #ffffff;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background-color: #106ebe;
+        }
+        
+        .btn-secondary {
+            background-color: #f3f2f1;
+            color: #323130;
+            border-color: #8a8886;
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #edebe9;
+        }
+
+        /* Ticket abschließen */
+        .btn-danger-text {
+            background-color: #fde7e9;
+            color: #a80000;
+            border: 1px solid #d13438;
+            font-weight: 600;
+        }
+
+        .btn-danger-text:hover:not(:disabled) {
+            background-color: #f9d6d9;
+        }
+
+        /* Speichern-Button bewusst auffaellig gruen darstellen */
+        #btn-save-complete {
+            background-color: #107c41;
+            color: #ffffff;
+            border-color: #107c41;
+            box-shadow: 0 1px 3px rgba(16, 124, 65, 0.35);
+        }
+        
+        #btn-save-complete:hover:not(:disabled) {
+            background-color: #0b6a35;
+            border-color: #0b6a35;
+        }
+        
+        .button-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .button-row .btn {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        #status-message {
+            padding: 10px;
+            border-radius: 2px;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        
+        .status-error {
+            background-color: #fde7e9;
+            color: #a80000;
+            border-left: 4px solid #a80000;
+        }
+        
+        .status-success {
+            background-color: #dff6dd;
+            color: #107c41;
+            border-left: 4px solid #107c41;
+        }
+        
+        .loader {
+            border: 3px solid #f3f2f1;
+            border-top: 3px solid #0078d4;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Login-Bereich */
+        #login-container {
+            text-align: center;
+            padding: 24px 16px;
+        }
+        
+        #login-container p {
+            color: #605e5c;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+        
+        #login-link-container {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #605e5c;
+        }
+        
+        #login-link-container a {
+            color: #0078d4;
+        }
+
+        .readonly-row {
+            display: grid;
+            grid-template-columns: 42% 58%;
+            gap: 8px;
+            padding: 6px 0;
+            border-bottom: 1px solid #edebe9;
+        }
+        
+        .readonly-row:last-child {
+            border-bottom: 0;
+        }
+        
+        .readonly-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #605e5c;
+        }
+        
+        .readonly-value {
+            font-size: 13px;
+            color: #323130;
+            word-break: break-word;
+        }
+        
+        .required-marker {
+            color: #a80000;
+            margin-left: 3px;
+        }
+        
+        select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #a19f9d;
+            border-radius: 2px;
+            box-sizing: border-box;
+            font-family: inherit;
+            margin-top: 4px;
+            background: #fff;
+        }
+        
+        .description-box {
+            margin-top: 8px;
+        }
+        
+        .description-edit {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #d0d0d0;
+            border-radius: 2px;
+            background: #fafafa;
+            min-height: 120px;
+            max-height: 280px;
+            overflow-y: auto;
+            line-height: 1.45;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .readonly-textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #d0d0d0;
+            border-radius: 2px;
+            background: #fafafa;
+            min-height: 180px;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 13px;
+            line-height: 1.45;
+            color: #323130;
+        }
+        
+        /* OBERER BEREICH: Optimierter & verkleinerter Header-Karten-Container */
+        .ticket-header-card {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 160px; /* Rechter Spalte 160px fest zugewiesen (vorher 135px) */
+            gap: 12px;
+            border: 1px solid #edebe9;
+            border-radius: 6px;
+            padding: 12px;
+            background: #ffffff;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        }
+        
+        .ticket-header-left {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            min-width: 0;
+        }
+        
+        .ticket-header-icon {
+            width: 36px; /* Leicht verkleinert (vorher 42px) */
+            height: 36px;
+            border-radius: 50%;
+            background: #e8f1fb;
+            color: #005a9e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .ticket-header-main {
+            min-width: 0;
+        }
+        
+        /* Überschrift verkleinert und dezenter gestaltet */
+        .ticket-title-main {
+            font-size: 15px; /* Angenehmer und weniger dominant (vorher 18px) */
+            font-weight: 600; /* Auf Standard-Semibold reduziert */
+            color: #201f1e;
+            margin: 0 0 4px 0;
+            word-break: break-word;
+        }
+
+        .ticket-title-secondary {
+    font-size: 14px;
+    margin-top: -2px;
+    margin-bottom: 6px;
+    color: #323130;
+        }
+        .ticket-subtitle {
+            font-size: 12px; /* Leicht verkleinert (vorher 13px) */
+            color: #605e5c;
+            margin-bottom: 6px;
+            word-break: break-word;
+        }
+        
+        .ticket-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #dff6dd;
+            color: #107c41;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+        }
+        
+        .ticket-status-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #107c41;
+            display: inline-block;
+        }
+        
+        /* RECHTER BEREICH: Mehr Platz und Schutz vor Umbrüchen */
+        .ticket-header-right {
+            border-left: 1px solid #edebe9;
+            padding-left: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            justify-content: center; /* Zentriert die Inhalte vertikal */
+            flex-shrink: 0;
+        }
+        
+        .ticket-side-label {
+            font-size: 11px;
+            color: #605e5c;
+            margin-bottom: 2px;
+            white-space: nowrap; /* Verhindert das Umbrechen des Labels */
+        }
+        
+        .ticket-side-value {
+            font-size: 12px;
+            color: #201f1e;
+            word-break: keep-all; /* Behält Wörter zusammen */
+            white-space: nowrap;  /* Priorität wird zwingend einzeilig gehalten */
+        }
+        
+        .ticket-priority-badge {
+            display: inline-block;
+            background: #fff4ce;
+            color: #8a5800;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            white-space: nowrap; /* Absoluter Umbruchschutz für das Badge */
+        }
+
+        .lookup-field-group {
+            position: relative;
+        }
+        
+        .lookup-dropdown {
+            position: absolute;
+            z-index: 1000;
+            left: 0;
+            right: 0;
+            margin-top: 2px;
+            background: #ffffff;
+            border: 1px solid #605e5c;
+            border-radius: 2px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        
+        .lookup-result {
+            display: block;
+            width: 100%;
+            padding: 7px 9px;
+            border: 0;
+            background: #ffffff;
+            text-align: left;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        .lookup-result:hover {
+            background: #f3f2f1;
+        }
+        
+        .lookup-result-main {
+            display: block;
+            color: #201f1e;
+            font-size: 13px;
+        }
+        
+        .lookup-result-sub {
+            display: block;
+            color: #605e5c;
+            font-size: 12px;
+            margin-top: 2px;
+        }
+        
+        .lookup-empty {
+            padding: 8px 9px;
+            color: #605e5c;
+            font-size: 12px;
+        }
+        
+        .lookup-clear {
+            margin-top: 4px;
+            border: 0;
+            background: transparent;
+            color: #0078d4;
+            padding: 0;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        /* Mobile Ansichten (deaktiviert erzwungenen Umbruch bei schmalen Displays zu früh) */
+        @media (max-width: 320px) {
+            .ticket-header-card { grid-template-columns: 1fr; }
+            .ticket-header-right { border-left: 0; border-top: 1px solid #edebe9; padding-left: 0; padding-top: 12px; }
+        }
+        
+        /* Bereits vorhandene Overrides am Ende der Datei wurden für Konsistenz mit angepasst */
+        .ticket-header { padding: 10px 12px !important; gap: 14px !important; }
+        .ticket-title { font-size: 15px !important; font-weight: 600 !important; }
+        .ticket-sub { font-size: 12px !important; }
+        .ticket-badge { font-size: 11px !important; padding: 2px 8px !important; }
+        .ticket-right { min-width: 160px !important; padding-left: 14px !important; }
+        .ticket-right * { font-size: 12px !important; }
+        .priority { white-space: nowrap !important; display: inline-block; }
+        
+        #addin-version {
+            margin-top: 10px;
+            text-align: right;
+            font-size: 11px;
+            color: #8a8886;
+        }
+    </style>
+</head>
+<body>
+    <header id="addin-header">
+        <div class="header-left">
+            <img src="hedelius_logo.png" alt="Hedelius Logo" class="logo">
+            <h1 class="title">Hedelius Service</h1>
+        </div>
+        <div id="addin-version"></div>
+    </header>
+
+    <div id="main-content">
+        <div id="status-container" class="hidden">
+            <div id="status-message"></div>
+        </div>
+
+        <div id="loading-state" class="hidden">
+            <div class="loader"></div>
+            <p style="text-align:center; color:#605e5c;">Daten werden geladen...</p>
+        </div>
+
+        <div id="login-container" class="hidden section">
+            <img src="hedelius_logo.png" alt="Hedelius" style="width:120px; margin-bottom:16px;">
+            <p>Bitte melden Sie sich mit Ihrem Hedelius-Konto an, um fortzufahren.</p>
+            <button id="btn-manual-login" class="btn btn-primary">🔐 Bei Hedelius anmelden</button>
+            <div id="login-link-container" class="hidden">
+                <p>Popup blockiert? <a href="https://henne49808.github.io/Service-outlook-addin/auth.html" target="_blank">Login-Seite direkt öffnen</a>, danach diese Seite neu laden.</p>
+            </div>
+        </div>
+
+        <div id="app-container" class="hidden">
+            <div id="section-filled" class="section">
+                <div id="filled-fields-container"></div>
+            </div>
+
+            <div id="section-missing" class="section hidden">
+                <h2>Fehlende Werte</h2>
+                <div id="missing-fields-form"></div>
+                <button id="btn-save-missing" class="btn btn-secondary hidden" hidden style="margin-top:10px;">Eingaben speichern</button>
+            </div>
+
+            <div id="section-complete" class="section hidden">
+                <h2>Ticketinformationen</h2>
+                <div id="complete-fields-container"></div>
+                <button id="btn-save-complete" class="btn btn-secondary hidden" hidden style="margin-top:10px;">Änderungen speichern</button>
+            </div>
+
+            <div id="section-description" class="section">
+                <h2>Beschreibung</h2>
+                <div id="incident-description" class="description-box"><em>Keine Beschreibung vorhanden.</em></div>
+            </div>
+
+            <div id="section-actions" class="section">
+                <h2>Aktionen</h2>
+                <button id="btn-sap-transfer" class="btn btn-primary hidden">An SAP übergeben</button>
+                <button id="btn-sap-forward" class="btn btn-primary hidden">An SAP-Besitzer weiterleiten</button>
+                <div class="button-row">
+                    <button id="btn-open-dynamics" class="btn btn-secondary">In Dynamics anzeigen</button>
+                    <button id="btn-free" class="btn btn-secondary" type="button">Frei</button>
+                </div>
+                <button id="btn-close-ticket" class="btn btn-secondary btn-danger-text" type="button">Ticket als erledigt markieren</button>
+            </div>
+            
+            <div id="section-kieingangsdaten" class="section">
+                <h2>Hinweise</h2>
+
+                <div class="field-group">
+                    <div class="field-label">Hinweise zur Dublettenprüfung</div>
+                    <textarea id="kie-meldungsbezugstypgrund" class="readonly-textarea" rows="10" readonly></textarea>
+                </div>
+
+                <div class="field-group">
+                    <div class="field-label">Hinweise zur Maschinennummer</div>
+                    <textarea id="kie-hinweismaschinenauswahl" class="readonly-textarea" rows="10" readonly></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="taskpane.js?v=20260701.18"></script>
+</body>
+</html>
