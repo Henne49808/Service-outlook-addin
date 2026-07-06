@@ -29,7 +29,7 @@ incidentClosedStatus: 281370004,
 
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.17;
+const ADDIN_BUILD   = "20260701.17";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
