@@ -31,7 +31,7 @@ incidentClosedStatus: 281370004,
 sapForwardTargetStatusValue: 281370007,
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.13"20260701.13";
+const ADDIN_BUILD   = "20260701.14";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
