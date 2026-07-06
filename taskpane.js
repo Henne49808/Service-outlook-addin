@@ -29,7 +29,7 @@ incidentClosedStatus: 281370004,
 
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.16";
+const ADDIN_BUILD   = "20260701.17;
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
@@ -435,7 +435,7 @@ async function fetchDynamicsData(messageId) {
     }
 
     const incidentUrl = buildDataverseUrl(`incidents(${regardingId})`, {
-        "$select": "incidentid,ticketnumber,title,con_maschinennummer,description,prioritycode,con_sapid,con_sapbesitzer,hed_sapsyncstatus,_customerid_value,_msa_partnercontactid_value,_hed_kieingangsdaten_value,statecode,statuscode,createdon,modifiedon"
+        "$select": "incidentid,ticketnumber,title,con_maschinennummer,description,prioritycode,con_sapid,con_sapbesitzer,hed_sapsyncstatus,routecase,_customerid_value,_msa_partnercontactid_value,_hed_kieingangsdaten_value,statecode,statuscode,createdon,modifiedon"
     });
 
     const incident = await fetchJsonOrThrow(incidentUrl, { method: "GET", headers }, "Dynamics-Incident-Abfrage");
