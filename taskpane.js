@@ -29,7 +29,7 @@ incidentClosedStatus: 281370004,
 
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.19";
+const ADDIN_BUILD   = "20260701.20";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
@@ -546,7 +546,15 @@ function renderUI() {
     renderTicketHeader(filledContainer);
 
     const missingFields = getMissingRequiredFields();
-    const hasMissing = missingFields.length > 0;
+
+const hasSapId =
+    currentState.incidentData?.con_sapid !== undefined &&
+    currentState.incidentData?.con_sapid !== null &&
+    String(currentState.incidentData.con_sapid).trim() !== "";
+
+const hasMissing =
+    missingFields.length > 0 &&
+    !hasSapId;
 
     setElementVisible("section-missing", hasMissing);
     setElementVisible("section-complete", !hasMissing);
