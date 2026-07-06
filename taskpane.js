@@ -27,8 +27,8 @@ sapTransferReadyFormattedText: "übergabefähig",
 incidentCancelledStatus: 6,
 incidentClosedStatus: 281370004,
 
-// SAP-Weiterleitung
-sapForwardTargetStatusValue: 281370007,
+// SAP-Weiterleitung möglich, wenn SAP-Syncstatus auf  Mit SAP gekoppelt steht
+sapForwardTargetStatusValue: 281370006,
 };
 const ADDIN_VERSION = "1.0.4";
 const ADDIN_BUILD   = "20260701.15";
