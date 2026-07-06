@@ -1071,7 +1071,6 @@ function evaluateActionButtonsLogic() {
     const sapOwner = String(inc.con_sapbesitzer || "").trim();
 
     const stateCode = Number(inc.statecode);
-    const statusCode = Number(inc.statuscode);
 
     // Ein Incident gilt als geschlossen, wenn statecode = 1 (Resolved)
     // oder statecode = 2 (Canceled)
