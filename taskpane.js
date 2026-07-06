@@ -435,7 +435,7 @@ async function fetchDynamicsData(messageId) {
     }
 
     const incidentUrl = buildDataverseUrl(`incidents(${regardingId})`, {
-        "$select": "incidentid,ticketnumber,title,con_maschinennummer,description,prioritycode,con_sapid,con_sapbesitzer,hed_sapsyncstatus,routecase,_customerid_value,_msa_partnercontactid_value,_hed_kieingangsdaten_value,statecode,statuscode,createdon,modifiedon"
+        "$select": "incidentid,ticketnumber,title,con_maschinennummer,description,prioritycode,con_sapid,con_sapbesitzer,hed_sapsyncstatus,hed_weiterleitenansapbesitzer,_customerid_value,_msa_partnercontactid_value,_hed_kieingangsdaten_value,statecode,statuscode,createdon,modifiedon"
     });
 
     const incident = await fetchJsonOrThrow(incidentUrl, { method: "GET", headers }, "Dynamics-Incident-Abfrage");
@@ -1391,7 +1391,7 @@ async function handleSapForward() {
         }
 
         await updateIncidentEntity({
-            routecase: true
+            hed_weiterleitenansapbesitzer: true
         });
 
         showStatus("Weiterleitung wurde angefordert.", "success");
