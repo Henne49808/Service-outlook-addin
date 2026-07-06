@@ -31,7 +31,7 @@ incidentClosedStatus: 281370004,
 sapForwardTargetStatusValue: 281370007,
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.14";
+const ADDIN_BUILD   = "20260701.14"20260701.14"20260701.14";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
@@ -561,9 +561,10 @@ function renderUI() {
         renderCompleteTicketInformation(completeContainer);
     }
 
-    renderDescriptionSection();
-renderKieingangsdatenSection();
-evaluateActionButtonsLogic();
+   renderDescriptionSection();
+    renderKieingangsdatenSection();
+    updateSapForwardButton();
+    evaluateActionButtonsLogic();
 
     // Nach dem Rendern einen stabilen Ausgangszustand speichern.
     // Das verhindert, dass programmatisch gesetzte Werte, Browser-Normalisierung
@@ -1050,11 +1051,27 @@ function getFieldValue(logicalName) {
     return formatted ?? inc[logicalName];
 }
 
+function updateSapForwardButton() {
+
+    const button = document.getElementById("btn-sap-forward");
+    if (!button) return;
+
+    const sapOwner = String(currentState.incidentData?.con_sapbesitzer || "").trim();
+
+    if (sapOwner) {
+        button.textContent = `An ${sapOwner} weiterleiten`;
+    } else {
+        button.textContent = "An SAP-Besitzer weiterleiten";
+    }
+}
+
 function evaluateActionButtonsLogic() {
     const inc = currentState.incidentData || {};
 
     const syncStatusRaw = inc.hed_sapsyncstatus;
     const sapId = inc.con_sapid;
+    const sapOwner = String(inc.con_sapbesitzer || "").trim();
+
     const stateCode = Number(inc.statecode);
     const statusCode = Number(inc.statuscode);
 
@@ -1063,31 +1080,39 @@ function evaluateActionButtonsLogic() {
     const isClosed =
         stateCode === 1 ||
         stateCode === 2;
-    
+
     const hasSapId =
         sapId !== undefined &&
         sapId !== null &&
         String(sapId).trim() !== "";
 
+    const hasSapOwner =
+        sapOwner !== "";
+
     const canTransferToSap =
         Number(syncStatusRaw) === 281370001 &&
         !hasSapId;
 
-    const canForwardToSapOwner = hasSapId;
+    // Weiterleitung nur möglich, wenn SAP-ID UND SAP-Besitzer vorhanden sind.
+    const canForwardToSapOwner =
+        hasSapId &&
+        hasSapOwner;
 
     document.getElementById("btn-sap-transfer")
         .classList.toggle("hidden", !canTransferToSap);
 
     document.getElementById("btn-sap-forward")
         .classList.toggle("hidden", !canForwardToSapOwner);
-    
+
     document.getElementById("btn-close-ticket")
-    .classList.toggle("hidden", isClosed);
-    
+        .classList.toggle("hidden", isClosed);
+
     console.log("SAP-Button-Logik:", {
         hed_sapsyncstatus: syncStatusRaw,
         con_sapid: sapId,
+        con_sapbesitzer: sapOwner,
         hasSapId,
+        hasSapOwner,
         canTransferToSap,
         canForwardToSapOwner
     });
