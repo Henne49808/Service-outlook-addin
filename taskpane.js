@@ -4,7 +4,7 @@
 
 // 1. DYNAMICS 365 KONFIGURATION
 const D365_CONFIG = {
-    apiEndpoint: "https://dev-hedelius.api.crm4.dynamics.com/api/data/v9.2",
+    apiEndpoint: "https://hedelius.api.crm4.dynamics.com/api/data/v9.2",
 
     // Pflichtinformationen für die Vollständigkeitsprüfung in Block 2A/2B.
     requiredFields: [
@@ -29,7 +29,7 @@ incidentClosedStatus: 281370004,
 
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.22";
+const ADDIN_BUILD   = "20260701.23";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
