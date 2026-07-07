@@ -29,7 +29,7 @@ incidentClosedStatus: 281370004,
 
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.21";
+const ADDIN_BUILD   = "20260701.22"20260701.22";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
@@ -88,11 +88,46 @@ async function initAddIn() {
         await reloadCurrentMail({ force: true });
         registerItemChangedHandler();;
     } catch (error) {
-        console.error("Initialisierung fehlgeschlagen:", error);
-        showStatus(error.message, "error");
-    } finally {
+    console.error("Initialisierung fehlgeschlagen:", error);
+    clearRenderedTicketData();
+    showStatus(error.message, "error");
+} finally {
         toggleLoading(false);
     }
+}
+
+function clearRenderedTicketData() {
+    currentState.incidentId = null;
+    currentState.incidentData = {};
+    currentState.emailData = {};
+    currentState.eingangsdatenData = {};
+    currentState.formBaseline = null;
+
+    const app = document.getElementById("app-container");
+    if (app) {
+        app.classList.add("hidden");
+    }
+
+    [
+        "filled-fields-container",
+        "missing-fields-form",
+        "complete-fields-container",
+        "incident-description"
+    ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.replaceChildren();
+    });
+
+    const elGrund = document.getElementById("kie-meldungsbezugstypgrund");
+    if (elGrund) elGrund.value = "";
+
+    const elHinweis = document.getElementById("kie-hinweismaschinenauswahl");
+    if (elHinweis) elHinweis.value = "";
+
+    setElementVisible("section-missing", false);
+    setElementVisible("section-complete", false);
+    setElementVisible("btn-save-missing", false);
+    setElementVisible("btn-save-complete", false);
 }
 
 async function reloadCurrentMail(options = {}) {
@@ -144,9 +179,10 @@ async function reloadCurrentMail(options = {}) {
 
         await loadAndRender();
     } catch (error) {
-        console.error("Fehler beim Aktualisieren:", error);
-        showStatus(error.message, "error");
-    } finally {
+    console.error("Fehler beim Aktualisieren:", error);
+    clearRenderedTicketData();
+    showStatus(error.message, "error");
+} finally {
         currentState.itemChangeInProgress = false;
 
         if (showLoading) {
