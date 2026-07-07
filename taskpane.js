@@ -2,7 +2,7 @@
 // Robuste Version: Dataverse-Abfragen ohne polymorphen $expand, bessere Fehlerdiagnose,
 // sichere UI-Ausgabe und defensive Behandlung von Dataverse-Choice-/Lookup-Werten.
 
-// 1. DYNAMICS 365 KONFIGURATION
+// 1. DYNAMICS 365 KONFIGURATION 
 const D365_CONFIG = {
     apiEndpoint: "https://hedelius.api.crm4.dynamics.com/api/data/v9.2",
 
