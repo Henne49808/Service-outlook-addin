@@ -29,7 +29,7 @@ incidentClosedStatus: 281370004,
 
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.23";
+const ADDIN_BUILD   = "20260701.23".24";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
@@ -1113,8 +1113,13 @@ function evaluateActionButtonsLogic() {
     const syncStatusRaw = inc.hed_sapsyncstatus;
     const sapId = inc.con_sapid;
     const sapOwner = String(inc.con_sapbesitzer || "").trim();
+    
+    const meldungsbezugstyp =
+    Number(currentState.eingangsdatenData?.hed_meldungsbezugstyp);
 
-    const stateCode = Number(inc.statecode);
+    const isInitialmeldung =
+        meldungsbezugstyp === 281370001;
+        const stateCode = Number(inc.statecode);
 
     // Ein Incident gilt als geschlossen, wenn statecode = 1 (Resolved)
     // oder statecode = 2 (Canceled)
@@ -1132,7 +1137,8 @@ function evaluateActionButtonsLogic() {
 
     const canTransferToSap =
         Number(syncStatusRaw) === 281370001 &&
-        !hasSapId;
+        !hasSapId &&
+        isInitialmeldung;
 
     // Weiterleitung nur möglich, wenn SAP-ID UND SAP-Besitzer vorhanden sind.
     const canForwardToSapOwner =
@@ -1152,11 +1158,13 @@ function evaluateActionButtonsLogic() {
         hed_sapsyncstatus: syncStatusRaw,
         con_sapid: sapId,
         con_sapbesitzer: sapOwner,
+        hed_meldungsbezugstyp: meldungsbezugstyp,
+        isInitialmeldung,
         hasSapId,
         hasSapOwner,
         canTransferToSap,
         canForwardToSapOwner
-    });
+});
 }
 function normalizeComparableValue(value) {
     return String(value ?? "")
