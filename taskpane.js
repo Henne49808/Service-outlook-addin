@@ -17,11 +17,12 @@ const D365_CONFIG = {
         { logicalName: "description", label: "Beschreibung", type: "textarea" }
     ],
 
-    // Status-/Choice-Werte bitte nach dem Test mit den echten Optionswerten aus Dataverse befüllen.
-    // Wichtig: Choice-Spalten werden in Dataverse per PATCH mit NUMERISCHEN Werten gesetzt, nicht mit Text.
-    // Status-/Choice-Werte
-sapTransferTargetStatusValue: null,
-sapTransferReadyFormattedText: "übergabefähig",
+// SAP-Synchronisationsstatus
+sapTransferReadyStatusValue: 281370001,  // Übergabefähig
+sapTransferTargetStatusValue: 281370002, // Zur Übergabe vorgesehen
+
+// Meldungsbezugstyp
+initialReportTypeValue: 281370001,        // hed_meldungsbezugstyp: Initialmeldung
 
 // Incident abschließen / stornieren
 incidentCancelledStatus: 6,
@@ -29,7 +30,7 @@ incidentClosedStatus: 281370004,
 
 };
 const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.24";
+const ADDIN_BUILD   = "20260701.25"20260701.25";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
@@ -1118,7 +1119,7 @@ function evaluateActionButtonsLogic() {
     Number(currentState.eingangsdatenData?.hed_meldungsbezugstyp);
 
     const isInitialmeldung =
-        meldungsbezugstyp === 281370001;
+        meldungsbezugstyp === D365_CONFIG.initialReportTypeValue;
         const stateCode = Number(inc.statecode);
 
     // Ein Incident gilt als geschlossen, wenn statecode = 1 (Resolved)
@@ -1136,7 +1137,7 @@ function evaluateActionButtonsLogic() {
         sapOwner !== "";
 
     const canTransferToSap =
-        Number(syncStatusRaw) === 281370001 &&
+        Number(syncStatusRaw) === D365_CONFIG.sapTransferReadyStatusValue &&
         !hasSapId &&
         isInitialmeldung;
 
