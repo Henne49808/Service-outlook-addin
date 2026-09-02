@@ -29,8 +29,8 @@ incidentCancelledStatus: 6,
 incidentClosedStatus: 281370004,
 
 };
-const ADDIN_VERSION = "1.0.5";
-const ADDIN_BUILD   = "20260901.1";
+const ADDIN_VERSION = "1.0.4";
+const ADDIN_BUILD   = "20260701.25";
 const EMPTY_CUSTOMERS = ["NONAME"];
 let currentState = {
     incidentId: null,
@@ -762,7 +762,6 @@ function renderTicketHeader(container) {
     const machineNumber = getFieldValue("con_maschinennummer") || "-";
     const priority = getFieldValue("prioritycode") || "-";
     const status = getFieldValue("statuscode") || getFieldValue("statecode") || "-";
-    const sapSyncStatus = getFieldValue("hed_sapsyncstatus") || "-";
     const createdOn = formatDateTimeValue(inc.createdon);
     const modifiedOn = formatDateTimeValue(inc.modifiedon);
     const meldungsbezugstyp =
@@ -809,11 +808,6 @@ subtitle.textContent = String(title || machineNumber || "-");
     statusText.textContent = String(status);
 
     statusBadge.append(dot, statusText);
-
-    const sapSyncStatusLine = document.createElement("div");
-    sapSyncStatusLine.className = "ticket-sap-sync-status";
-    sapSyncStatusLine.textContent = `SAP-Übergabe: ${String(sapSyncStatus)}`;
-
     const bezugstyp = document.createElement("div");
     bezugstyp.className = "ticket-subtitle";
     bezugstyp.textContent = meldungsbezugstyp;
@@ -822,8 +816,7 @@ subtitle.textContent = String(title || machineNumber || "-");
     sapLine,
     subtitle,
     bezugstyp,
-    statusBadge,
-    sapSyncStatusLine
+    statusBadge
 );
     left.append(icon, main);
 
