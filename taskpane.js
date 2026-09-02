@@ -29,9 +29,19 @@ incidentCancelledStatus: 6,
 incidentClosedStatus: 281370004,
 
 };
-const ADDIN_VERSION = "1.0.4";
-const ADDIN_BUILD   = "20260701.25";
+const ADDIN_VERSION = "1.0.6";
+const ADDIN_BUILD   = "20260902.1";
 const EMPTY_CUSTOMERS = ["NONAME"];
+
+const SAP_SYNC_STATUS_PRESENTATION = Object.freeze({
+    281370000: { label: "nicht übergabefähig", cssClass: "sap-sync-not-ready" },
+    281370001: { label: "übergabefähig", cssClass: "sap-sync-ready" },
+    281370002: { label: "Übergabe vorgesehen", cssClass: "sap-sync-planned" },
+    281370003: { label: "Übergabe in arbeit", cssClass: "sap-sync-in-progress" },
+    281370004: { label: "Übergabe erfolgreich", cssClass: "sap-sync-success" },
+    281370005: { label: "Übergabe fehlerhaft", cssClass: "sap-sync-error" },
+    281370006: { label: "Mit SAP gekoppelt", cssClass: "sap-sync-linked" }
+});
 let currentState = {
     incidentId: null,
     incidentData: {},
@@ -762,6 +772,14 @@ function renderTicketHeader(container) {
     const machineNumber = getFieldValue("con_maschinennummer") || "-";
     const priority = getFieldValue("prioritycode") || "-";
     const status = getFieldValue("statuscode") || getFieldValue("statecode") || "-";
+    const sapSyncStatusRaw = inc.hed_sapsyncstatus;
+    const sapSyncPresentation = SAP_SYNC_STATUS_PRESENTATION[sapSyncStatusRaw] || {
+        label: "-",
+        cssClass: "sap-sync-unknown"
+    };
+    const sapSyncStatus =
+        inc["hed_sapsyncstatus@OData.Community.Display.V1.FormattedValue"] ||
+        sapSyncPresentation.label;
     const createdOn = formatDateTimeValue(inc.createdon);
     const modifiedOn = formatDateTimeValue(inc.modifiedon);
     const meldungsbezugstyp =
@@ -808,6 +826,7 @@ subtitle.textContent = String(title || machineNumber || "-");
     statusText.textContent = String(status);
 
     statusBadge.append(dot, statusText);
+
     const bezugstyp = document.createElement("div");
     bezugstyp.className = "ticket-subtitle";
     bezugstyp.textContent = meldungsbezugstyp;
@@ -815,10 +834,42 @@ subtitle.textContent = String(title || machineNumber || "-");
     titleMain,
     sapLine,
     subtitle,
-    bezugstyp,
-    statusBadge
+    bezugstyp
 );
-    left.append(icon, main);
+
+    const statusSection = document.createElement("div");
+    statusSection.className = "ticket-status-section";
+
+    const kiStatusRow = document.createElement("div");
+    kiStatusRow.className = "ticket-status-row";
+
+    const kiStatusLabel = document.createElement("div");
+    kiStatusLabel.className = "ticket-status-label";
+    kiStatusLabel.textContent = "KI-Status";
+
+    kiStatusRow.append(kiStatusLabel, statusBadge);
+
+    const sapStatusRow = document.createElement("div");
+    sapStatusRow.className = "ticket-status-row";
+
+    const sapStatusLabel = document.createElement("div");
+    sapStatusLabel.className = "ticket-status-label";
+    sapStatusLabel.textContent = "Übergabe";
+
+    const sapSyncBadge = document.createElement("div");
+    sapSyncBadge.className = `ticket-sap-sync-badge ${sapSyncPresentation.cssClass}`;
+
+    const sapSyncDot = document.createElement("span");
+    sapSyncDot.className = "ticket-sap-sync-dot";
+
+    const sapSyncText = document.createElement("span");
+    sapSyncText.textContent = String(sapSyncStatus);
+
+    sapSyncBadge.append(sapSyncDot, sapSyncText);
+    sapStatusRow.append(sapStatusLabel, sapSyncBadge);
+    statusSection.append(kiStatusRow, sapStatusRow);
+
+    left.append(icon, main, statusSection);
 
     const right = document.createElement("div");
     right.className = "ticket-header-right";
